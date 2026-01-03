@@ -5,7 +5,11 @@ import SwiftData
 struct CalmMindApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            // Models will be added here
+            ChatMessage.self,
+            DailySession.self,
+            JournalEntry.self,
+            TodoItem.self,
+            MemoryItem.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
