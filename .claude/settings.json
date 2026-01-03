@@ -1,0 +1,14 @@
+{
+  "project_name": "CalmMind",
+  "test_command": ".claude/scripts/run_unit_tests.sh",
+  "ui_test_command": ".claude/scripts/run_ui_smoke.sh",
+  "safety_check_command": ".claude/scripts/check_safety.sh",
+  "auto_run_tests_after_change": true,
+  "max_consecutive_failures": 3,
+  "require_tests_pass_before_commit": true,
+  "ci_equivalence": {
+    "note": "These scripts MUST match CI workflow commands exactly",
+    "ci_workflow_file": ".github/workflows/ci.yml",
+    "local_scripts_must_mirror_ci": true
+  }
+}
