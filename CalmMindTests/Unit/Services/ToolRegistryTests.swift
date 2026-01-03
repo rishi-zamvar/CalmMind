@@ -61,6 +61,13 @@ final class ToolRegistryTests: XCTestCase {
         XCTAssertNotNil(tool)
     }
 
+    func test_writeJournal_registered() {
+        let tool = sut.tool(named: "write_journal")
+        XCTAssertNotNil(tool, "write_journal must be registered for LLM to write journals")
+        XCTAssertEqual(tool?.name, "write_journal")
+        XCTAssertTrue(tool?.requiredParams.contains("content") ?? false)
+    }
+
     // MARK: - Schema Export
 
     func test_exportsOpenAIFunctionSchema() {
@@ -101,6 +108,7 @@ final class ToolRegistryTests: XCTestCase {
         XCTAssertTrue(names.contains("add_todo"))
         XCTAssertTrue(names.contains("complete_todo"))
         XCTAssertTrue(names.contains("list_todos"))
+        XCTAssertTrue(names.contains("write_journal"))
     }
 }
 

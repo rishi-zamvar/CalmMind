@@ -123,6 +123,28 @@ final class ToolRegistry: Sendable {
             ],
             requiredParams: ["content"],
             paramTypes: ["content": .string, "is_private": .boolean]
+        ),
+
+        // Write Journal
+        ToolDefinition(
+            name: "write_journal",
+            description: "Write to today's journal entry. Use only when the user explicitly asks to write or save a journal entry, or clearly indicates they want something recorded in their journal.",
+            parameters: [
+                "type": "object",
+                "properties": [
+                    "content": [
+                        "type": "string",
+                        "description": "The journal content to write"
+                    ],
+                    "append": [
+                        "type": "boolean",
+                        "description": "If true, append to existing entry. If false, replace. Defaults to true."
+                    ]
+                ],
+                "required": ["content"]
+            ],
+            requiredParams: ["content"],
+            paramTypes: ["content": .string, "append": .boolean]
         )
     ]
 
