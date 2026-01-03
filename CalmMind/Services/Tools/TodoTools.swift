@@ -1,18 +1,55 @@
 import Foundation
 
+// MARK: - Todo Fingerprint (for dedupe)
+
+/// Fingerprint for deduplicating todos within a day
+struct TodoFingerprint: Hashable {
+    let normalizedTitle: String  // lowercase, trimmed, punctuation removed
+    let dateWindow: Date         // rounded to start of day
+
+    init(title: String, date: Date) {
+        // Normalize: lowercase, remove punctuation, trim
+        self.normalizedTitle = title
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined(separator: " ")
+            .components(separatedBy: .whitespaces)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        // Round to start of day
+        self.dateWindow = Calendar.current.startOfDay(for: date)
+    }
+}
+
+// MARK: - Result Types
+
+/// Reason a todo was skipped
+enum TodoSkipReason: Sendable {
+    case duplicate
+    case hypothetical
+    case autoCreateDisabled
+}
+
 /// Result of a todo tool operation
 struct TodoToolResult: Sendable {
     let success: Bool
     let todoId: String?
     let error: String?
     let message: String?
+    let skipReason: TodoSkipReason?
+    let undoAction: (@Sendable () -> Void)?
 
-    static func success(id: String? = nil, message: String? = nil) -> TodoToolResult {
-        TodoToolResult(success: true, todoId: id, error: nil, message: message)
+    static func success(id: String? = nil, message: String? = nil, undoAction: (@Sendable () -> Void)? = nil) -> TodoToolResult {
+        TodoToolResult(success: true, todoId: id, error: nil, message: message, skipReason: nil, undoAction: undoAction)
+    }
+
+    static func skipped(reason: TodoSkipReason, message: String) -> TodoToolResult {
+        TodoToolResult(success: false, todoId: nil, error: nil, message: message, skipReason: reason, undoAction: nil)
     }
 
     static func failure(_ error: String) -> TodoToolResult {
-        TodoToolResult(success: false, todoId: nil, error: error, message: nil)
+        TodoToolResult(success: false, todoId: nil, error: error, message: nil, skipReason: nil, undoAction: nil)
     }
 }
 
@@ -38,22 +75,57 @@ final class TodoTools {
 
     private let todoRepository: TodoRepository
     private let normalizer: TodoTitleNormalizer
+    private let clock: any DateClock
+
+    // MARK: - Dedupe State
+
+    /// Recent fingerprints for deduplication (per-day)
+    private var recentFingerprints: Set<TodoFingerprint> = []
+
+    /// Day the fingerprints are valid for
+    private var fingerprintDay: Date?
 
     // MARK: - Initialization
 
-    init(todoRepository: TodoRepository, normalizer: TodoTitleNormalizer = TodoTitleNormalizer()) {
+    init(
+        todoRepository: TodoRepository,
+        normalizer: TodoTitleNormalizer = TodoTitleNormalizer(),
+        clock: any DateClock = SystemClock()
+    ) {
         self.todoRepository = todoRepository
         self.normalizer = normalizer
+        self.clock = clock
+    }
+
+    // MARK: - Reset
+
+    /// Reset fingerprints (for testing or new day)
+    func resetFingerprints() {
+        recentFingerprints.removeAll()
+        fingerprintDay = nil
     }
 
     // MARK: - Add Todo
 
-    /// Add a new todo item
+    /// Add a new todo item with deduplication
     func addTodo(title: String, dueDate: Date? = nil) throws -> TodoToolResult {
         // Validate
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             return .failure("Title cannot be empty")
+        }
+
+        // Reset fingerprints if day changed
+        let today = calendar.startOfDay(for: clock.now)
+        if fingerprintDay != today {
+            recentFingerprints.removeAll()
+            fingerprintDay = today
+        }
+
+        // Check for duplicate
+        let fingerprint = TodoFingerprint(title: trimmed, date: clock.now)
+        if recentFingerprints.contains(fingerprint) {
+            return .skipped(reason: .duplicate, message: "Already added today: \(trimmed)")
         }
 
         // Normalize title
@@ -68,8 +140,31 @@ final class TodoTools {
         // Set due date (from parameter or extracted from title)
         todo.dueDate = dueDate ?? normalized.extractedDueDate
 
-        return .success(id: todo.id.uuidString, message: "Added todo: \(todo.title)")
+        // Add to fingerprints
+        recentFingerprints.insert(fingerprint)
+
+        // Create undo action
+        let todoId = todo.id
+        let undoAction: @Sendable () -> Void = { [weak self] in
+            try? self?.deleteTodo(id: todoId)
+        }
+
+        return .success(
+            id: todo.id.uuidString,
+            message: "Added: \(todo.title)",
+            undoAction: undoAction
+        )
     }
+
+    /// Delete a todo by ID (for undo)
+    private func deleteTodo(id: UUID) throws {
+        let todos = try todoRepository.fetchIncomplete() + todoRepository.fetchCompleted()
+        if let todo = todos.first(where: { $0.id == id }) {
+            try todoRepository.delete(todo)
+        }
+    }
+
+    private var calendar: Calendar { .current }
 
     // MARK: - Complete Todo
 

@@ -193,7 +193,8 @@ final class OpenAIService: OpenAIServiceProtocol, Sendable {
             messages: messages,
             tools: tools,
             stream: stream,
-            maxTokens: maxTokens
+            maxTokens: maxTokens,
+            temperature: 0.7
         )
 
         do {

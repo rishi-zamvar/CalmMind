@@ -74,6 +74,7 @@ struct ChatCompletionRequest: Codable {
     let tools: [OpenAIToolDefinition]?
     let stream: Bool
     let maxTokens: Int?
+    let temperature: Double?
 
     enum CodingKeys: String, CodingKey {
         case model
@@ -81,6 +82,7 @@ struct ChatCompletionRequest: Codable {
         case tools
         case stream
         case maxTokens = "max_tokens"
+        case temperature
     }
 }
 

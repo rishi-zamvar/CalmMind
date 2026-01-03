@@ -15,11 +15,13 @@ struct OrchestratorResponse: Sendable {
     let content: String
     let isCrisisResponse: Bool
     let toolsExecuted: [String]
+    let safetyLevel: SafetyLevel
 
-    init(content: String, isCrisisResponse: Bool = false, toolsExecuted: [String] = []) {
+    init(content: String, isCrisisResponse: Bool = false, toolsExecuted: [String] = [], safetyLevel: SafetyLevel = .safe) {
         self.content = content
         self.isCrisisResponse = isCrisisResponse
         self.toolsExecuted = toolsExecuted
+        self.safetyLevel = safetyLevel
     }
 }
 
@@ -33,7 +35,7 @@ protocol AIOrchestratorProtocol {
 /// Responsibilities:
 /// - Safety classification before LLM calls
 /// - Context management and token budgeting
-/// - Tool call execution
+/// - Tool call execution via ToolExecutor
 /// - Message persistence
 @MainActor
 final class AIOrchestrator: AIOrchestratorProtocol {
@@ -46,10 +48,14 @@ final class AIOrchestrator: AIOrchestratorProtocol {
     private let crisisComposer: CrisisResponseComposer
     private let toolRegistry: ToolRegistry
     private let toolValidator: ToolValidator
+    private let toolExecutor: ToolExecutor
     private let messageRepository: MessageRepository
     private let sessionRepository: SessionRepository
     private let todoRepository: TodoRepository
     private let journalRepository: JournalRepository
+    private let preferences: UserPreferences
+    private let clock: any DateClock
+    private let analytics: AnalyticsProtocol?
 
     // MARK: - Initialization
 
@@ -59,10 +65,14 @@ final class AIOrchestrator: AIOrchestratorProtocol {
         safetyClassifier: SafetyClassifier,
         toolRegistry: ToolRegistry,
         toolValidator: ToolValidator,
+        toolExecutor: ToolExecutor,
         messageRepository: MessageRepository,
         sessionRepository: SessionRepository,
         todoRepository: TodoRepository,
-        journalRepository: JournalRepository
+        journalRepository: JournalRepository,
+        preferences: UserPreferences = .shared,
+        clock: any DateClock = SystemClock(),
+        analytics: AnalyticsProtocol? = nil
     ) {
         self.openAIService = openAIService
         self.contextManager = contextManager
@@ -70,62 +80,14 @@ final class AIOrchestrator: AIOrchestratorProtocol {
         self.crisisComposer = CrisisResponseComposer()
         self.toolRegistry = toolRegistry
         self.toolValidator = toolValidator
+        self.toolExecutor = toolExecutor
         self.messageRepository = messageRepository
         self.sessionRepository = sessionRepository
         self.todoRepository = todoRepository
         self.journalRepository = journalRepository
-    }
-
-    // MARK: - System Prompt
-
-    func buildSystemPrompt(
-        recentTodos: [String] = [],
-        yesterdaySummary: String? = nil,
-        memories: [String] = []
-    ) -> String {
-        var prompt = """
-        You are a compassionate AI mental health companion. Your role is to:
-        - Listen with empathy and validate emotions
-        - Help users reflect on their thoughts and feelings
-        - Suggest healthy coping strategies when appropriate
-        - Never provide medical advice or diagnoses
-        - Always encourage professional help when needed
-
-        Today's date: \(formatCurrentDate())
-
-        Guidelines:
-        - Be warm, supportive, and non-judgmental
-        - Ask open-ended questions to encourage reflection
-        - Acknowledge and validate feelings
-        - Suggest actionable self-care when appropriate
-        - For serious concerns, recommend professional support
-        """
-
-        if !recentTodos.isEmpty {
-            prompt += "\n\nUser's current todos:\n"
-            for todo in recentTodos.prefix(5) {
-                prompt += "- \(todo)\n"
-            }
-        }
-
-        if let summary = yesterdaySummary {
-            prompt += "\n\nYesterday's conversation summary:\n\(summary)"
-        }
-
-        if !memories.isEmpty {
-            prompt += "\n\nRelevant context from past conversations:\n"
-            for memory in memories.prefix(3) {
-                prompt += "- \(memory)\n"
-            }
-        }
-
-        return prompt
-    }
-
-    private func formatCurrentDate() -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .full
-        return formatter.string(from: Date())
+        self.preferences = preferences
+        self.clock = clock
+        self.analytics = analytics
     }
 
     // MARK: - Message Processing
@@ -138,24 +100,48 @@ final class AIOrchestrator: AIOrchestratorProtocol {
         }
 
         // Get or create today's session
-        let session = try sessionRepository.getOrCreate(for: Date())
+        let session = try sessionRepository.getOrCreate(for: clock.now)
 
         // CRITICAL: Save user message BEFORE any network call
         let userChatMessage = ChatMessage(content: trimmed, role: .user)
         try messageRepository.save(userChatMessage, to: session)
 
-        // Check safety FIRST (before LLM call)
+        // SINGLE DECISION POINT: Classify safety and get policy
         let safetyResult = safetyClassifier.classify(trimmed)
-        if safetyResult.level == .crisis {
-            return handleCrisisMessage(trimmed, session: session)
+        let policy = SafetyPolicy.from(safetyResult.level)
+
+        // Log safety classification (level only, no content)
+        analytics?.log(event: .safetyClassified(level: safetyResult.level))
+
+        // Handle crisis - bypass LLM entirely
+        if policy == .bypassLLM {
+            analytics?.log(event: .crisisDetected)
+            return handleCrisisMessage(trimmed, session: session, safetyLevel: safetyResult.level)
         }
 
-        // Build context for OpenAI
+        // Build context for OpenAI using pure function
         let recentMessages = try messageRepository.fetchMessages(for: session)
         let todos = try todoRepository.fetchIncomplete()
         let todoTitles = todos.map { $0.title }
 
-        let systemPrompt = buildSystemPrompt(recentTodos: todoTitles)
+        // Get today's journal summary (if any)
+        let todaysJournal: String?
+        if let entry = try journalRepository.fetchEntry(for: clock.now) {
+            // Use summary if available, otherwise truncate full text
+            todaysJournal = entry.summary ?? String(entry.fullText.prefix(200))
+        } else {
+            todaysJournal = nil
+        }
+
+        // Build system prompt with all explicit parameters (pure function)
+        let systemPrompt = SystemPromptBuilder.build(
+            userName: preferences.userName,
+            autoCreateTodos: preferences.autoCreateTodos,
+            recentTodos: todoTitles,
+            todaysJournal: todaysJournal,
+            memories: [],  // TODO: Add memory retrieval
+            currentDate: clock.now
+        )
 
         // Prepare messages for OpenAI
         var openAIMessages: [OpenAIMessage] = [
@@ -202,17 +188,31 @@ final class AIOrchestrator: AIOrchestratorProtocol {
             throw OrchestratorError.networkError
         }
 
-        // Handle tool calls if present
+        // Handle tool calls with PRE-DISPATCH FILTERING via ToolExecutor
         var executedTools: [String] = []
         if let toolCalls = response.toolCalls {
-            for toolCall in toolCalls {
-                _ = await executeToolCall(toolCall, session: session)
-                executedTools.append(toolCall.function.name)
+            // Reset rate limits for this message
+            await toolExecutor.resetRateLimits()
+
+            // Convert OpenAI tool calls to our ToolCall type
+            let calls = toolCalls.map { openAICall in
+                let arguments = toolValidator.parseArguments(openAICall.function.arguments) ?? [:]
+                return ToolCall(
+                    id: openAICall.id,
+                    name: openAICall.function.name,
+                    arguments: arguments
+                )
             }
+
+            // Execute with policy-based filtering (happens inside ToolExecutor)
+            let results = await toolExecutor.execute(calls, policy: policy)
+
+            // Collect executed tool names
+            executedTools = results.filter { $0.wasAllowed }.map { $0.toolName }
         }
 
-        // Get the response content
-        let responseContent = response.content ?? "I'm here to listen."
+        // Get the response content - avoid generic fallback
+        let responseContent = response.content ?? ""
 
         // Save assistant response
         if !responseContent.isEmpty {
@@ -223,13 +223,14 @@ final class AIOrchestrator: AIOrchestratorProtocol {
         return OrchestratorResponse(
             content: responseContent,
             isCrisisResponse: false,
-            toolsExecuted: executedTools
+            toolsExecuted: executedTools,
+            safetyLevel: safetyResult.level
         )
     }
 
     // MARK: - Crisis Handling
 
-    private func handleCrisisMessage(_ message: String, session: DailySession) -> OrchestratorResponse {
+    private func handleCrisisMessage(_ message: String, session: DailySession, safetyLevel: SafetyLevel) -> OrchestratorResponse {
         // Generate crisis response WITHOUT calling LLM
         let crisisResponse = crisisComposer.compose(for: message)
         let responseText = crisisResponse.message
@@ -245,62 +246,8 @@ final class AIOrchestrator: AIOrchestratorProtocol {
         return OrchestratorResponse(
             content: responseText,
             isCrisisResponse: true,
-            toolsExecuted: []
+            toolsExecuted: [],
+            safetyLevel: safetyLevel
         )
-    }
-
-    // MARK: - Tool Execution
-
-    private func executeToolCall(_ toolCall: OpenAIToolCall, session: DailySession) async -> String {
-        let functionName = toolCall.function.name
-        let argumentsJSON = toolCall.function.arguments
-
-        // Parse arguments
-        guard let arguments = toolValidator.parseArguments(argumentsJSON) else {
-            return "Failed to parse tool arguments"
-        }
-
-        // Validate the tool call
-        let validation = toolValidator.validate(toolName: functionName, arguments: arguments)
-        guard validation.isValid else {
-            return "Invalid tool call: \(validation.error ?? "Unknown error")"
-        }
-
-        // Execute based on tool name
-        do {
-            switch functionName {
-            case "add_todo":
-                let title = arguments["title"] as? String ?? ""
-                let todoTools = TodoTools(todoRepository: todoRepository)
-                let result = try todoTools.addTodo(title: title)
-                return result.message ?? "Todo added"
-
-            case "complete_todo":
-                let title = arguments["title"] as? String
-                let id = arguments["id"] as? String
-                let todoTools = TodoTools(todoRepository: todoRepository)
-                let result = try todoTools.completeTodo(title: title, id: id)
-                return result.message ?? "Todo completed"
-
-            case "list_todos":
-                let includeCompleted = arguments["include_completed"] as? Bool ?? false
-                let todoTools = TodoTools(todoRepository: todoRepository)
-                let result = try todoTools.listTodos(includeCompleted: includeCompleted)
-                return "Found \(result.totalCount) todos"
-
-            case "create_journal_draft":
-                let journalTools = JournalTools(
-                    journalRepository: journalRepository,
-                    sessionRepository: sessionRepository
-                )
-                let result = try journalTools.createDraft(for: session.id)
-                return result.message ?? "Journal draft created"
-
-            default:
-                return "Unknown tool: \(functionName)"
-            }
-        } catch {
-            return "Tool execution failed: \(error.localizedDescription)"
-        }
     }
 }

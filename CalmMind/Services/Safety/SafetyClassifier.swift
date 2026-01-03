@@ -1,15 +1,51 @@
 import Foundation
 
 /// Classification levels for message safety
-enum SafetyLevel: String, Codable, Sendable {
+enum SafetyLevel: String, Codable, Sendable, Comparable {
     /// Message is safe - normal conversation
     case safe
+
+    /// User seems distressed, be extra warm (LLM continues)
+    case supportive
 
     /// Message shows concerning patterns - proceed with extra care
     case cautionary
 
     /// Message indicates crisis - bypass LLM, show resources immediately
     case crisis
+
+    // MARK: - Comparable
+
+    private var order: Int {
+        switch self {
+        case .safe: return 0
+        case .supportive: return 1
+        case .cautionary: return 2
+        case .crisis: return 3
+        }
+    }
+
+    static func < (lhs: SafetyLevel, rhs: SafetyLevel) -> Bool {
+        lhs.order < rhs.order
+    }
+}
+
+/// Context in which a concerning pattern was detected
+enum SafetyContext: String, Codable, Sendable {
+    /// User is speaking about themselves
+    case direct
+
+    /// "My friend said..."
+    case quoted
+
+    /// "If someone were to..."
+    case hypothetical
+
+    /// "I don't want to..."
+    case negated
+
+    /// "This exam makes me want to die"
+    case idiomatic
 }
 
 /// Result of safety classification
@@ -22,81 +58,105 @@ struct SafetyClassificationResult: Sendable {
 
     /// Original input (for reference)
     let input: String
+
+    /// Context in which patterns were found
+    let context: SafetyContext
+
+    /// Computed score for debugging
+    let score: Int
 }
 
 /// Local, deterministic safety classifier for mental health messages
 /// CRITICAL: This classifier runs locally and NEVER calls external services
-/// Crisis messages must bypass the LLM entirely
+///
+/// DESIGN PHILOSOPHY: Very high threshold for crisis detection.
+/// Only EXPLICIT self-harm statements trigger crisis bypass.
+/// Normal emotional discussions (anxiety, sadness, breakups, stress) should NEVER trigger.
+///
+/// The AI is designed to be a helpful companion for ALL emotional topics.
+/// Crisis mode is reserved for imminent self-harm risk only.
 final class SafetyClassifier: Sendable {
 
-    // MARK: - Crisis Patterns (Must Never Miss)
+    // MARK: - Crisis Patterns (VERY EXPLICIT ONLY)
 
-    /// Direct statements of suicidal intent
+    /// These patterns MUST be explicit statements of self-harm intent.
+    /// Normal emotional distress should NEVER match these.
     private static let crisisPatterns: [String] = [
-        // Suicidal ideation - direct
-        "want to die",
-        "want to end my life",
-        "want to kill myself",
+        // Direct self-harm statements
+        "kill myself",
+        "kill my self",
         "going to kill myself",
-        "thinking about suicide",
-        "planning to end it",
-        "end it all",
+        "want to kill myself",
+        "i'm going to end my life",
+        "i want to end my life",
+        "end my life",
         "take my own life",
-        "no reason to live",
-        "no point in living",
-        "better off dead",
-        "wish i was dead",
-        "wish i were dead",
+        "going to take my own life",
 
-        // Self-harm - active
+        // Suicide-specific
+        "commit suicide",
+        "planning suicide",
+        "going to commit suicide",
+
+        // Active self-harm
         "cutting myself",
-        "hurting myself",
-        "hurt myself",
-        "going to hurt myself",
-        "harming myself",
-        "harm myself",
-        "burning myself",
+        "hurting myself on purpose",
+        "self-harming",
 
-        // Overdose indicators
+        // Passive suicidal ideation
+        "don't want to be alive",
+        "wish i wasn't here",
+        "nobody would miss me",
+        "wouldn't miss me",
+
+        // Self-harm plan
+        "plan to hurt myself",
+        "planning to hurt myself",
+
+        // Overdose/method
         "take all my pills",
-        "taking all my pills",
-        "overdose",
-
-        // Hopelessness with finality
-        "don't want to live",
-        "do not want to live",
-        "can't go on anymore",
-        "can't take it anymore",
-        "everyone would be better off without me",
-        "no one would miss me",
-        "giving away .* won't need",
-        "saying goodbye",
-
-        // Methods
-        "jump off",
-        "hang myself",
-        "shoot myself",
+        "going to overdose",
     ]
 
-    /// Exclusion patterns - contexts that indicate non-crisis despite keywords
+    /// Cautionary patterns - serious situations that need care but not crisis bypass.
+    /// These let the AI engage with safety planning rather than showing crisis resources.
+    private static let cautionaryPatterns: [String] = [
+        // Violence toward others (vague anger)
+        "want to hurt someone",
+        "going to hurt someone",
+
+        // Domestic abuse (needs safety planning)
+        "partner hits me",
+        "partner beats me",
+        "being abused",
+        "abusing me",
+
+        // Stalking/danger (needs practical help)
+        "being stalked",
+        "someone is following me",
+    ]
+
+    /// Exclusion patterns - DO NOT trigger crisis even if crisis pattern matches
     private static let exclusionPatterns: [String] = [
-        // Past tense - discussing history
+        // Past tense - discussing history (must be specific to avoid false positives)
         "used to",
-        "i was",
         "in the past",
         "years ago",
-        "when i was",
-        "i had been",
+        "when i was younger",
+        "back when i",
         "i'm better now",
+        "no longer",
+        "not anymore",
 
         // Hypothetical/educational
         "if someone",
-        "what would you tell",
+        "what would you",
         "how to help",
         "suicide prevention",
         "mental health awareness",
+        "someone who",
 
-        // Media references
+        // Media/fictional
         "movie",
         "show",
         "song",
@@ -104,49 +164,16 @@ final class SafetyClassifier: Sendable {
         "article",
         "lyrics",
         "character",
+        "game",
+        "story",
 
-        // Metaphorical usage
-        "killing me .* work",
-        "killing me .* deadline",
-        "died .* game",
-        "died laughing",
-        "kill me softly",
-        "killing it",
-        "slaying",
-    ]
-
-    // MARK: - Cautionary Patterns
-
-    /// Patterns indicating concern but not immediate crisis
-    private static let cautionaryPatterns: [String] = [
-        "feel hopeless",
-        "feeling hopeless",
-        "feel worthless",
-        "feeling worthless",
-        "feeling .* down",
-        "really down",
-        "feel down",
-        "so overwhelmed",
-        "don't know what to do",
-        "can't cope",
-        "falling apart",
-        "breaking down",
-        "depressed",
-        "depression",
-        "anxiety is",
-        "panic attack",
-        "can't sleep",
-        "haven't slept",
-        "not eating",
-        "drinking too much",
-        "using drugs",
-        "feel alone",
-        "no one understands",
-        "no one cares",
-        "feel empty",
-        "numb inside",
-        "lost all motivation",
-        "don't see the point",
+        // Negation
+        "don't want to kill",
+        "not going to kill",
+        "would never kill",
+        "won't kill",
+        "don't want to hurt",
+        "not going to hurt",
     ]
 
     // MARK: - Initialization
@@ -159,75 +186,78 @@ final class SafetyClassifier: Sendable {
     /// - Parameter message: The user's message to classify
     /// - Returns: Classification result with level and matched patterns
     func classify(_ message: String) -> SafetyClassificationResult {
-        let normalizedMessage = message.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowercased = message.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
         // Empty messages are safe
-        guard !normalizedMessage.isEmpty else {
-            return SafetyClassificationResult(level: .safe, matchedPatterns: [], input: message)
+        guard !lowercased.isEmpty else {
+            return SafetyClassificationResult(
+                level: .safe,
+                matchedPatterns: [],
+                input: message,
+                context: .direct,
+                score: 0
+            )
         }
 
-        // Check for exclusion patterns first
-        let hasExclusion = Self.exclusionPatterns.contains { pattern in
-            matchesPattern(normalizedMessage, pattern: pattern)
+        // Check for exclusion patterns FIRST
+        let hasExclusion = Self.exclusionPatterns.contains { lowercased.contains($0) }
+
+        // If exclusion pattern is present, message is safe (discussing past, hypothetical, etc.)
+        if hasExclusion {
+            return SafetyClassificationResult(
+                level: .safe,
+                matchedPatterns: [],
+                input: message,
+                context: .hypothetical,
+                score: 0
+            )
         }
 
-        // Check for crisis patterns
-        var matchedCrisisPatterns: [String] = []
+        // Check for explicit crisis patterns
+        var matchedPatterns: [String] = []
         for pattern in Self.crisisPatterns {
-            if matchesPattern(normalizedMessage, pattern: pattern) {
-                matchedCrisisPatterns.append(pattern)
+            if lowercased.contains(pattern) {
+                matchedPatterns.append(pattern)
             }
         }
 
-        // If crisis patterns found and no exclusions, it's a crisis
-        if !matchedCrisisPatterns.isEmpty && !hasExclusion {
+        // Only trigger crisis if we have an explicit match AND no exclusions
+        if !matchedPatterns.isEmpty {
             return SafetyClassificationResult(
                 level: .crisis,
-                matchedPatterns: matchedCrisisPatterns,
-                input: message
+                matchedPatterns: matchedPatterns,
+                input: message,
+                context: .direct,
+                score: 100
             )
         }
 
-        // Check for cautionary patterns
-        var matchedCautionaryPatterns: [String] = []
+        // Check for cautionary patterns (serious but not crisis bypass)
+        var cautionaryMatches: [String] = []
         for pattern in Self.cautionaryPatterns {
-            if matchesPattern(normalizedMessage, pattern: pattern) {
-                matchedCautionaryPatterns.append(pattern)
+            if lowercased.contains(pattern) {
+                cautionaryMatches.append(pattern)
             }
         }
 
-        // If crisis patterns with exclusions, or cautionary patterns, it's cautionary
-        if (!matchedCrisisPatterns.isEmpty && hasExclusion) || !matchedCautionaryPatterns.isEmpty {
-            let allMatched = matchedCrisisPatterns + matchedCautionaryPatterns
+        if !cautionaryMatches.isEmpty {
             return SafetyClassificationResult(
                 level: .cautionary,
-                matchedPatterns: allMatched,
-                input: message
+                matchedPatterns: cautionaryMatches,
+                input: message,
+                context: .direct,
+                score: 50
             )
         }
 
-        // Otherwise safe
-        return SafetyClassificationResult(level: .safe, matchedPatterns: [], input: message)
-    }
-
-    // MARK: - Private Helpers
-
-    /// Check if message matches a pattern (supports .* for wildcards)
-    private func matchesPattern(_ message: String, pattern: String) -> Bool {
-        // Convert simple wildcard pattern to regex
-        let regexPattern = pattern
-            .replacingOccurrences(of: ".", with: "\\.")
-            .replacingOccurrences(of: "\\.*", with: ".*")  // Restore .* wildcards
-
-        guard let regex = try? NSRegularExpression(
-            pattern: regexPattern,
-            options: [.caseInsensitive]
-        ) else {
-            // Fallback to simple contains if regex fails
-            return message.contains(pattern)
-        }
-
-        let range = NSRange(message.startIndex..., in: message)
-        return regex.firstMatch(in: message, options: [], range: range) != nil
+        // Everything else is SAFE - let the AI engage fully
+        // Anxiety, depression, breakups, stress, sadness - ALL SAFE for AI to discuss
+        return SafetyClassificationResult(
+            level: .safe,
+            matchedPatterns: [],
+            input: message,
+            context: .direct,
+            score: 0
+        )
     }
 }

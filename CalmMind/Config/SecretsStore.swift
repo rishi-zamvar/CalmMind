@@ -24,6 +24,8 @@ enum SecretsStoreError: Error, LocalizedError {
     case emptyKey
     case keychainError(OSStatus)
     case unexpectedData
+    case deviceLocked
+    case migrationFailed
 
     var errorDescription: String? {
         switch self {
@@ -33,6 +35,20 @@ enum SecretsStoreError: Error, LocalizedError {
             return "Keychain error: \(status)"
         case .unexpectedData:
             return "Unexpected data format in keychain"
+        case .deviceLocked:
+            return "Device must be unlocked at least once"
+        case .migrationFailed:
+            return "Failed to migrate from old storage"
+        }
+    }
+
+    /// Whether the error is recoverable (e.g., wait and retry)
+    var isRecoverable: Bool {
+        switch self {
+        case .deviceLocked:
+            return true  // Wait and retry
+        default:
+            return false
         }
     }
 }
@@ -40,11 +56,17 @@ enum SecretsStoreError: Error, LocalizedError {
 // MARK: - Keychain Implementation
 
 /// Keychain-backed secrets storage
-/// Uses kSecAttrAccessibleWhenUnlockedThisDeviceOnly for security
+/// PRODUCTION REQUIREMENTS:
+/// - Accessibility: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly (available after first unlock)
+/// - iCloud Sync: DISABLED (API keys must not sync across devices)
+/// - Error Handling: Explicit failure states with device locked detection
 final class KeychainSecretsStore: SecretsStore {
 
     private let service: String
     private let apiKeyAccount = "openai-api-key"
+
+    /// PRODUCTION: Available after first unlock, not synced to iCloud
+    private let accessibility = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
 
     init(service: String = "com.calmmind.app") {
         self.service = service
@@ -64,16 +86,22 @@ final class KeychainSecretsStore: SecretsStore {
         // Delete existing key first (if any)
         deleteAPIKey()
 
-        // Add new key
+        // Add new key with production security settings
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: apiKeyAccount,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+            kSecAttrAccessible as String: accessibility,
+            kSecAttrSynchronizable as String: kCFBooleanFalse!  // NO iCloud sync
         ]
 
         let status = SecItemAdd(query as CFDictionary, nil)
+
+        // Handle specific error cases
+        if status == errSecNotAvailable || status == errSecInteractionNotAllowed {
+            throw SecretsStoreError.deviceLocked
+        }
 
         guard status == errSecSuccess else {
             throw SecretsStoreError.keychainError(status)
@@ -91,6 +119,12 @@ final class KeychainSecretsStore: SecretsStore {
 
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        // Handle device locked case gracefully
+        if status == errSecNotAvailable || status == errSecInteractionNotAllowed {
+            // Device locked - return nil, caller should handle
+            return nil
+        }
 
         guard status == errSecSuccess,
               let data = result as? Data,
@@ -113,6 +147,34 @@ final class KeychainSecretsStore: SecretsStore {
 
     var hasAPIKey: Bool {
         getAPIKey() != nil
+    }
+
+    // MARK: - Migration
+
+    /// Migrate API key from UserDefaults (one-time, then delete from defaults)
+    /// Call this on app launch to migrate legacy storage
+    func migrateFromUserDefaultsIfNeeded(defaults: UserDefaults = .standard) throws {
+        let legacyKey = "openAIApiKey"
+
+        // Check if there's a legacy key to migrate
+        guard let oldValue = defaults.string(forKey: legacyKey), !oldValue.isEmpty else {
+            return  // Nothing to migrate
+        }
+
+        // Check if we already have a key in Keychain
+        if hasAPIKey {
+            // Already migrated, just delete the old one
+            defaults.removeObject(forKey: legacyKey)
+            return
+        }
+
+        // Migrate to Keychain
+        do {
+            try saveAPIKey(oldValue)
+            defaults.removeObject(forKey: legacyKey)
+        } catch {
+            throw SecretsStoreError.migrationFailed
+        }
     }
 }
 

@@ -144,15 +144,18 @@ final class DataDeleterTests: XCTestCase {
     // MARK: - Clear UserDefaults
 
     func test_deleteAllData_clearsUserDefaults() throws {
-        // Set known keys that the deleter explicitly clears
-        testUserDefaults.set(true, forKey: "morningNotificationsEnabled")
-        testUserDefaults.set(true, forKey: "eveningNotificationsEnabled")
+        // Use keys that don't have registered defaults
+        // Many keys (morningNotificationsEnabled, privacyModeEnabled, hasCompletedOnboarding, etc.)
+        // have registered defaults from UserPreferences.registerDefaults()
+        // lastNudgeMorningAt and lastNudgeEveningAt do NOT have registered defaults
+        testUserDefaults.set(Date(), forKey: "lastNudgeMorningAt")
+        testUserDefaults.set(Date(), forKey: "lastNudgeEveningAt")
 
         try sut.deleteAllData()
 
-        // These specific keys should be cleared
-        XCTAssertNil(testUserDefaults.object(forKey: "morningNotificationsEnabled"))
-        XCTAssertNil(testUserDefaults.object(forKey: "eveningNotificationsEnabled"))
+        // These specific keys should be cleared (they don't have registered defaults)
+        XCTAssertNil(testUserDefaults.object(forKey: "lastNudgeMorningAt"))
+        XCTAssertNil(testUserDefaults.object(forKey: "lastNudgeEveningAt"))
     }
 
     // MARK: - Clear Encryption Keys

@@ -21,9 +21,13 @@ final class UserPreferences {
         static let privacyModeEnabled = "privacyModeEnabled"
         static let notificationPrivacyMode = "notificationPrivacyMode"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let hasCompletedOnboardingV2 = "hasCompletedOnboardingV2"
         static let lastNudgeMorningAt = "lastNudgeMorningAt"
         static let lastNudgeEveningAt = "lastNudgeEveningAt"
         static let deviceSalt = "deviceSalt"
+        static let userName = "userName"
+        static let autoCreateTodos = "autoCreateTodos"
+        static let installedVersion = "installedBuildVersion"
     }
 
     // MARK: - Properties
@@ -43,7 +47,9 @@ final class UserPreferences {
             Keys.eveningNotificationsEnabled: true,
             Keys.privacyModeEnabled: false,
             Keys.notificationPrivacyMode: NotificationPrivacyMode.detailed.rawValue,
-            Keys.hasCompletedOnboarding: false
+            Keys.hasCompletedOnboarding: false,
+            Keys.hasCompletedOnboardingV2: false,
+            Keys.autoCreateTodos: true
         ])
     }
 
@@ -89,6 +95,55 @@ final class UserPreferences {
         set { defaults.set(newValue, forKey: Keys.hasCompletedOnboarding) }
     }
 
+    /// Whether the user has completed V2 onboarding (with name collection)
+    /// Force V2 onboarding for ALL users exactly once
+    var hasCompletedOnboardingV2: Bool {
+        get { defaults.bool(forKey: Keys.hasCompletedOnboardingV2) }
+        set { defaults.set(newValue, forKey: Keys.hasCompletedOnboardingV2) }
+    }
+
+    // MARK: - User Profile
+
+    /// User's name for personalized responses
+    /// - Trims whitespace on set
+    /// - Returns nil for empty/whitespace-only strings
+    var userName: String? {
+        get { defaults.string(forKey: Keys.userName) }
+        set {
+            let trimmed = newValue?.trimmingCharacters(in: .whitespaces)
+            defaults.set(trimmed?.isEmpty == false ? trimmed : nil, forKey: Keys.userName)
+        }
+    }
+
+    // MARK: - Behavior Preferences
+
+    /// Whether todos should be auto-created from conversation
+    /// Defaults to true (opt-out, not opt-in)
+    var autoCreateTodos: Bool {
+        get {
+            // If key doesn't exist, return true (default)
+            if defaults.object(forKey: Keys.autoCreateTodos) == nil {
+                return true
+            }
+            return defaults.bool(forKey: Keys.autoCreateTodos)
+        }
+        set { defaults.set(newValue, forKey: Keys.autoCreateTodos) }
+    }
+
+    // MARK: - Version Tracking
+
+    /// Stamp the installed version on first launch (for migrations)
+    func stampInstallVersionIfNeeded(currentVersion: String) {
+        if defaults.string(forKey: Keys.installedVersion) == nil {
+            defaults.set(currentVersion, forKey: Keys.installedVersion)
+        }
+    }
+
+    /// The version that was first installed
+    var installedVersion: String? {
+        defaults.string(forKey: Keys.installedVersion)
+    }
+
     // MARK: - Nudge Tracking (Anti-Duplicate)
 
     /// Last time a morning nudge was scheduled
@@ -126,9 +181,12 @@ final class UserPreferences {
             Keys.privacyModeEnabled,
             Keys.notificationPrivacyMode,
             Keys.hasCompletedOnboarding,
+            Keys.hasCompletedOnboardingV2,
             Keys.lastNudgeMorningAt,
-            Keys.lastNudgeEveningAt
-            // Note: deviceSalt is intentionally NOT reset
+            Keys.lastNudgeEveningAt,
+            Keys.userName,
+            Keys.autoCreateTodos
+            // Note: deviceSalt and installedVersion are intentionally NOT reset
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }
     }

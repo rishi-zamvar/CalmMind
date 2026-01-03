@@ -95,12 +95,24 @@ struct ChatTabView: View {
         let toolRegistry = ToolRegistry()
         let toolValidator = ToolValidator(registry: toolRegistry)
 
+        // Create tool executor with journal and todo tools
+        let journalTools = JournalTools(
+            journalRepository: journalRepository,
+            sessionRepository: sessionRepository
+        )
+        let todoTools = TodoTools(todoRepository: todoRepository)
+        let toolExecutor = ToolExecutor(
+            journalTools: journalTools,
+            todoTools: todoTools
+        )
+
         return AIOrchestrator(
             openAIService: OpenAIService(),
             contextManager: ContextManager(),
             safetyClassifier: SafetyClassifier(),
             toolRegistry: toolRegistry,
             toolValidator: toolValidator,
+            toolExecutor: toolExecutor,
             messageRepository: messageRepository,
             sessionRepository: sessionRepository,
             todoRepository: todoRepository,

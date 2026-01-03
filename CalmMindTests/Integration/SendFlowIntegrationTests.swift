@@ -33,12 +33,24 @@ final class SendFlowIntegrationTests: XCTestCase {
         let toolRegistry = ToolRegistry()
         let toolValidator = ToolValidator(registry: toolRegistry)
 
+        // Create tool executor
+        let journalTools = JournalTools(
+            journalRepository: journalRepo,
+            sessionRepository: sessionRepo
+        )
+        let todoTools = TodoTools(todoRepository: todoRepo)
+        let toolExecutor = ToolExecutor(
+            journalTools: journalTools,
+            todoTools: todoTools
+        )
+
         orchestrator = AIOrchestrator(
             openAIService: mockOpenAI,
             contextManager: contextManager,
             safetyClassifier: safetyClassifier,
             toolRegistry: toolRegistry,
             toolValidator: toolValidator,
+            toolExecutor: toolExecutor,
             messageRepository: messageRepo,
             sessionRepository: sessionRepo,
             todoRepository: todoRepo,
@@ -231,8 +243,8 @@ final class SendFlowIntegrationTests: XCTestCase {
     // MARK: - Crisis Flow Integration
 
     func test_crisisMessage_bypassesNetwork_savesToSession() async throws {
-        // Send crisis message
-        let response = try await orchestrator.processMessage("I don't want to live anymore")
+        // Must use explicit self-harm statement to trigger crisis
+        let response = try await orchestrator.processMessage("I want to kill myself")
 
         // Should return crisis response
         XCTAssertTrue(response.isCrisisResponse)
