@@ -1,0 +1,525 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3EC5FC46B0932BF617C22D99 /* CalmMindUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA4D8F7E339AA62A2653643 /* CalmMindUITests.swift */; };
+		867FE4A6514E4275B1E9E4AF /* CalmMindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD9DDFA04BBBCB8FAD800249 /* CalmMindTests.swift */; };
+		968DC48EF9CBEABA379BC7AC /* CalmMindApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0962A367C3E229C8867024C5 /* CalmMindApp.swift */; };
+		AADD0951D807DA1950217E6A /* CalmMindUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B82E92C2DF0BA876FE602881 /* CalmMindUITestsLaunchTests.swift */; };
+		C85F9EA6994D97957D867BEF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934F5EE728C182CE14E66FFC /* ContentView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D0ADF23AF505B6A416B6F2C7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAAA2341B43E14314702C5FD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0BC681AE6A3A8D726DA95F53;
+			remoteInfo = CalmMind;
+		};
+		E4F24C86CC3621F2AE6E4127 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAAA2341B43E14314702C5FD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0BC681AE6A3A8D726DA95F53;
+			remoteInfo = CalmMind;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0962A367C3E229C8867024C5 /* CalmMindApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindApp.swift; sourceTree = "<group>"; };
+		0EA4D8F7E339AA62A2653643 /* CalmMindUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindUITests.swift; sourceTree = "<group>"; };
+		25CB304335679843212BC9B0 /* CalmMindTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CalmMindTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2818DFB8C197D7BEE125331C /* CalmMind.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CalmMind.entitlements; sourceTree = "<group>"; };
+		648F5490D57E1FF3C1B2A22A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		934F5EE728C182CE14E66FFC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B82E92C2DF0BA876FE602881 /* CalmMindUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		BD9DDFA04BBBCB8FAD800249 /* CalmMindTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindTests.swift; sourceTree = "<group>"; };
+		E38DFA3B3943017896EF6D77 /* CalmMind.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CalmMind.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4BB9426B12E467084D17F80 /* CalmMindUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CalmMindUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		090C71368CDC4D203800B33F = {
+			isa = PBXGroup;
+			children = (
+				FE0E97A388F63664A2F64712 /* CalmMind */,
+				CE7E19EDF8592E1D85D00DA0 /* CalmMindTests */,
+				AC864F5BC69DA49D7AEC7458 /* CalmMindUITests */,
+				38154912843A9FF5E925DBBF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		183B7D1212E6999198945A0C /* App */ = {
+			isa = PBXGroup;
+			children = (
+				0962A367C3E229C8867024C5 /* CalmMindApp.swift */,
+				934F5EE728C182CE14E66FFC /* ContentView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		38154912843A9FF5E925DBBF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E38DFA3B3943017896EF6D77 /* CalmMind.app */,
+				25CB304335679843212BC9B0 /* CalmMindTests.xctest */,
+				E4BB9426B12E467084D17F80 /* CalmMindUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AC864F5BC69DA49D7AEC7458 /* CalmMindUITests */ = {
+			isa = PBXGroup;
+			children = (
+				0EA4D8F7E339AA62A2653643 /* CalmMindUITests.swift */,
+				B82E92C2DF0BA876FE602881 /* CalmMindUITestsLaunchTests.swift */,
+			);
+			path = CalmMindUITests;
+			sourceTree = "<group>";
+		};
+		CE7E19EDF8592E1D85D00DA0 /* CalmMindTests */ = {
+			isa = PBXGroup;
+			children = (
+				BD9DDFA04BBBCB8FAD800249 /* CalmMindTests.swift */,
+			);
+			path = CalmMindTests;
+			sourceTree = "<group>";
+		};
+		FE0E97A388F63664A2F64712 /* CalmMind */ = {
+			isa = PBXGroup;
+			children = (
+				183B7D1212E6999198945A0C /* App */,
+				2818DFB8C197D7BEE125331C /* CalmMind.entitlements */,
+				648F5490D57E1FF3C1B2A22A /* Info.plist */,
+			);
+			path = CalmMind;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0BC681AE6A3A8D726DA95F53 /* CalmMind */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F84C55292FCDAEE2337067DB /* Build configuration list for PBXNativeTarget "CalmMind" */;
+			buildPhases = (
+				85F8207FFBD39F3B2F129A09 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CalmMind;
+			packageProductDependencies = (
+			);
+			productName = CalmMind;
+			productReference = E38DFA3B3943017896EF6D77 /* CalmMind.app */;
+			productType = "com.apple.product-type.application";
+		};
+		475F31D1F705105DE67F00F2 /* CalmMindTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8578DF83E0A1BC90ED5FC286 /* Build configuration list for PBXNativeTarget "CalmMindTests" */;
+			buildPhases = (
+				AF7EAA4CBFFAA2BD78CFB633 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				48F5ECE80BF34674A0A7790D /* PBXTargetDependency */,
+			);
+			name = CalmMindTests;
+			packageProductDependencies = (
+			);
+			productName = CalmMindTests;
+			productReference = 25CB304335679843212BC9B0 /* CalmMindTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		7751DB04AB10E76748282188 /* CalmMindUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8695530EF0B52F3284359CD9 /* Build configuration list for PBXNativeTarget "CalmMindUITests" */;
+			buildPhases = (
+				33A8A3D6481CC2C59E8CC15C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E29C00CE524D4B45CEAEB692 /* PBXTargetDependency */,
+			);
+			name = CalmMindUITests;
+			packageProductDependencies = (
+			);
+			productName = CalmMindUITests;
+			productReference = E4BB9426B12E467084D17F80 /* CalmMindUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAAA2341B43E14314702C5FD /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					0BC681AE6A3A8D726DA95F53 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					475F31D1F705105DE67F00F2 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					7751DB04AB10E76748282188 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = 0BC681AE6A3A8D726DA95F53;
+					};
+				};
+			};
+			buildConfigurationList = 6303C1EDBD53EBDAEAFCAC46 /* Build configuration list for PBXProject "CalmMind" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 090C71368CDC4D203800B33F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0BC681AE6A3A8D726DA95F53 /* CalmMind */,
+				475F31D1F705105DE67F00F2 /* CalmMindTests */,
+				7751DB04AB10E76748282188 /* CalmMindUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		33A8A3D6481CC2C59E8CC15C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3EC5FC46B0932BF617C22D99 /* CalmMindUITests.swift in Sources */,
+				AADD0951D807DA1950217E6A /* CalmMindUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		85F8207FFBD39F3B2F129A09 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				968DC48EF9CBEABA379BC7AC /* CalmMindApp.swift in Sources */,
+				C85F9EA6994D97957D867BEF /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF7EAA4CBFFAA2BD78CFB633 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				867FE4A6514E4275B1E9E4AF /* CalmMindTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		48F5ECE80BF34674A0A7790D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0BC681AE6A3A8D726DA95F53 /* CalmMind */;
+			targetProxy = D0ADF23AF505B6A416B6F2C7 /* PBXContainerItemProxy */;
+		};
+		E29C00CE524D4B45CEAEB692 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0BC681AE6A3A8D726DA95F53 /* CalmMind */;
+			targetProxy = E4F24C86CC3621F2AE6E4127 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0B40491A064CB4FC22AD31F1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.calmmind.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CalmMind;
+			};
+			name = Release;
+		};
+		545928A5851FEFB77CCC2D56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.calmmind.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CalmMind;
+			};
+			name = Debug;
+		};
+		568E4248AE0110EB3B58424A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CalmMind/CalmMind.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CalmMind/Info.plist;
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.calmmind.app;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A8349600F8A34E0EE90878E8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		AFB0E6E43963426B6C1572EF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.calmmind.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalmMind.app/CalmMind";
+			};
+			name = Debug;
+		};
+		B95821DFF76EBF421AD265A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CalmMind/CalmMind.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CalmMind/Info.plist;
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.calmmind.app;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		BE7004FC20408AB828AB92A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.calmmind.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalmMind.app/CalmMind";
+			};
+			name = Release;
+		};
+		E38FC61E6FEFFA53A18C4139 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6303C1EDBD53EBDAEAFCAC46 /* Build configuration list for PBXProject "CalmMind" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E38FC61E6FEFFA53A18C4139 /* Debug */,
+				A8349600F8A34E0EE90878E8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8578DF83E0A1BC90ED5FC286 /* Build configuration list for PBXNativeTarget "CalmMindTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AFB0E6E43963426B6C1572EF /* Debug */,
+				BE7004FC20408AB828AB92A2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8695530EF0B52F3284359CD9 /* Build configuration list for PBXNativeTarget "CalmMindUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				545928A5851FEFB77CCC2D56 /* Debug */,
+				0B40491A064CB4FC22AD31F1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F84C55292FCDAEE2337067DB /* Build configuration list for PBXNativeTarget "CalmMind" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				568E4248AE0110EB3B58424A /* Debug */,
+				B95821DFF76EBF421AD265A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AAAA2341B43E14314702C5FD /* Project object */;
+}
