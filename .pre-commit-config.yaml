@@ -1,0 +1,32 @@
+# Pre-commit hooks for CalmMind
+# Install: brew install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  - repo: local
+    hooks:
+      - id: preflight
+        name: Preflight Checks
+        entry: ./scripts/preflight.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+      - id: safety-check
+        name: Safety Checks
+        entry: ./.claude/scripts/check_safety.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+        exclude: '\.xcresult$'
