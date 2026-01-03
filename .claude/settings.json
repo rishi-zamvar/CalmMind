@@ -4,7 +4,7 @@
   "ui_test_command": ".claude/scripts/run_ui_smoke.sh",
   "safety_check_command": ".claude/scripts/check_safety.sh",
   "auto_run_tests_after_change": true,
-  "max_consecutive_failures": 3,
+  "max_consecutive_failures": 20,
   "require_tests_pass_before_commit": true,
   "ci_equivalence": {
     "note": "These scripts MUST match CI workflow commands exactly",

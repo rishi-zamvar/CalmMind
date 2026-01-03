@@ -8,6 +8,11 @@ Before making ANY code change, Claude MUST verify:
 - [ ] This change does NOT bypass crisis detection
 - [ ] This change has corresponding tests written FIRST
 
+## Pre-Edit Requirements
+1. **List files to be modified BEFORE editing** - state them explicitly
+2. **Verify each file is in current commit scope**
+3. **If change touches UI/widget/notifications**: UI tests must run post-change
+
 ## TDD Workflow
 1. Write failing test(s) first
 2. Verify test fails for the right reason

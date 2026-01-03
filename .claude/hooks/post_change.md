@@ -8,10 +8,22 @@ After EVERY code change, Claude MUST:
 
 ## On Test Failure
 - Do NOT proceed to next task
-- Read `.claude/hooks/on_failure.md`
+- **Re-run failing tests ONLY first** (saves time, prevents thrash):
+  `xcodebuild test -scheme CalmMind -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:CalmMindTests/<TestClass>/<testMethod>`
+- Once failing tests pass, run FULL unit test suite
+- Read `.claude/hooks/on_failure.md` for recovery protocol
 - Fix the failing test before continuing
 
 ## On Test Pass
 - Mark task as complete
 - Proceed to next commit in phase
 - Update progress in plan if needed
+
+## UI Test Requirements
+If the change touched any of these areas, ALSO run UI tests:
+- Views/
+- ViewModels/
+- Widget/
+- Notifications/
+
+Run: `.claude/scripts/run_ui_smoke.sh`
