@@ -17,6 +17,8 @@
 		C85F9EA6994D97957D867BEF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934F5EE728C182CE14E66FFC /* ContentView.swift */; };
 		CCDF855BC821067430606F8F /* SecretsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03A2507ED44B918D0E3EAFA /* SecretsStore.swift */; };
 		DD63F0FFE8C996E1C4889237 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78194749963E427976F76706 /* AppConfig.swift */; };
+		F9BE07800E4D96B8369E2F8F /* UserPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8ABE2615D5593427F509222 /* UserPreferencesTests.swift */; };
+		FDFF5A64333128F82C3B67CA /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10DDED3816964EFA245DB4DF /* UserPreferences.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,6 +41,7 @@
 /* Begin PBXFileReference section */
 		0962A367C3E229C8867024C5 /* CalmMindApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindApp.swift; sourceTree = "<group>"; };
 		0EA4D8F7E339AA62A2653643 /* CalmMindUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindUITests.swift; sourceTree = "<group>"; };
+		10DDED3816964EFA245DB4DF /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
 		25CB304335679843212BC9B0 /* CalmMindTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CalmMindTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2818DFB8C197D7BEE125331C /* CalmMind.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CalmMind.entitlements; sourceTree = "<group>"; };
 		2FEE447F0947B987D54FC3D1 /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
@@ -52,6 +55,7 @@
 		DD803D083BC146D7894295B0 /* SecretsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretsStoreTests.swift; sourceTree = "<group>"; };
 		E38DFA3B3943017896EF6D77 /* CalmMind.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CalmMind.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4BB9426B12E467084D17F80 /* CalmMindUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CalmMindUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E8ABE2615D5593427F509222 /* UserPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferencesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -89,6 +93,7 @@
 			children = (
 				78194749963E427976F76706 /* AppConfig.swift */,
 				D03A2507ED44B918D0E3EAFA /* SecretsStore.swift */,
+				10DDED3816964EFA245DB4DF /* UserPreferences.swift */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -133,6 +138,7 @@
 			children = (
 				2FEE447F0947B987D54FC3D1 /* AppConfigTests.swift */,
 				DD803D083BC146D7894295B0 /* SecretsStoreTests.swift */,
+				E8ABE2615D5593427F509222 /* UserPreferencesTests.swift */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -267,6 +273,7 @@
 				968DC48EF9CBEABA379BC7AC /* CalmMindApp.swift in Sources */,
 				C85F9EA6994D97957D867BEF /* ContentView.swift in Sources */,
 				CCDF855BC821067430606F8F /* SecretsStore.swift in Sources */,
+				FDFF5A64333128F82C3B67CA /* UserPreferences.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,6 +285,7 @@
 				867FE4A6514E4275B1E9E4AF /* CalmMindTests.swift in Sources */,
 				A16FDDA598CB707403AB6AA3 /* MockSecretsStore.swift in Sources */,
 				444434F1729769AF7CE2E363 /* SecretsStoreTests.swift in Sources */,
+				F9BE07800E4D96B8369E2F8F /* UserPreferencesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
