@@ -51,7 +51,10 @@ final class SafetyClassifier: Sendable {
         // Self-harm - active
         "cutting myself",
         "hurting myself",
+        "hurt myself",
+        "going to hurt myself",
         "harming myself",
+        "harm myself",
         "burning myself",
 
         // Overdose indicators
@@ -60,6 +63,8 @@ final class SafetyClassifier: Sendable {
         "overdose",
 
         // Hopelessness with finality
+        "don't want to live",
+        "do not want to live",
         "can't go on anymore",
         "can't take it anymore",
         "everyone would be better off without me",

@@ -68,6 +68,9 @@ final class CrisisResponseComposer: Sendable {
         \(support)
 
         \(callToAction)
+
+        📞 988 Suicide & Crisis Lifeline - Call or text 988 (available 24/7)
+        💬 Crisis Text Line - Text HOME to 741741
         """
 
         // Always include primary resources

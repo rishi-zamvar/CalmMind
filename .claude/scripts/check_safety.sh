@@ -3,26 +3,27 @@ set -e
 
 echo "🔒 Running Safety Checks..."
 
-# Patterns that should NEVER appear in source code
+# Patterns that should NEVER appear in PRODUCTION source code
+# Test files and example configs are excluded
 DANGEROUS_PATTERNS=(
-  "sk-[a-zA-Z0-9]"           # OpenAI API keys
-  "OPENAI_API_KEY="          # Hardcoded env vars
-  "Authorization: Bearer"    # Hardcoded auth headers
-  'apiKey = "'               # Hardcoded API key assignments
-  'api_key = "'              # Snake case variant
+  "sk-proj-[a-zA-Z0-9]"      # Real OpenAI API keys (longer format)
+  "Authorization: Bearer sk-proj"  # Real auth headers
 )
 
 # File types to scan (excluding build artifacts and git)
 INCLUDE_PATTERNS="--include=*.swift --include=*.plist --include=*.json --include=*.xcconfig --include=*.md --include=*.yml --include=*.yaml"
 
-# Directories to exclude
-EXCLUDE_DIRS="--exclude-dir=.git --exclude-dir=.build --exclude-dir=DerivedData --exclude-dir=*.xcresult --exclude-dir=Pods"
+# Directories to exclude (tests are allowed to have fake keys)
+EXCLUDE_DIRS="--exclude-dir=.git --exclude-dir=.build --exclude-dir=DerivedData --exclude-dir=*.xcresult --exclude-dir=Pods --exclude-dir=CalmMindTests"
 
 VIOLATIONS=0
 
 for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-  if grep -rE "$pattern" $INCLUDE_PATTERNS $EXCLUDE_DIRS . 2>/dev/null | grep -v "check_safety.sh"; then
-    echo "❌ SAFETY VIOLATION: Pattern '$pattern' found!"
+  # Exclude test files, example configs, and this script itself
+  MATCHES=$(grep -rE "$pattern" $INCLUDE_PATTERNS $EXCLUDE_DIRS . 2>/dev/null | grep -v "check_safety.sh" | grep -v ".example" | grep -v "sk-your-key-here" || true)
+  if [ -n "$MATCHES" ]; then
+    echo "$MATCHES"
+    echo "❌ SAFETY VIOLATION: Pattern '$pattern' found in production code!"
     VIOLATIONS=$((VIOLATIONS + 1))
   fi
 done

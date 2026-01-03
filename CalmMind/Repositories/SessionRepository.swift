@@ -25,6 +25,11 @@ final class SessionRepository {
         return session
     }
 
+    /// Convenience alias for getOrCreateSession
+    func getOrCreate(for date: Date) throws -> DailySession {
+        try getOrCreateSession(for: date)
+    }
+
     // MARK: - Fetch
 
     /// Fetches a session by its date key
@@ -35,12 +40,29 @@ final class SessionRepository {
         return try context.fetch(descriptor).first
     }
 
+    /// Fetches a session by its UUID
+    func fetchSession(for sessionId: UUID) throws -> DailySession? {
+        let descriptor = FetchDescriptor<DailySession>(
+            predicate: #Predicate { $0.id == sessionId }
+        )
+        return try context.fetch(descriptor).first
+    }
+
     /// Fetches all sessions ordered by date descending (most recent first)
     func fetchAllSessions() throws -> [DailySession] {
         var descriptor = FetchDescriptor<DailySession>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         descriptor.fetchLimit = nil
+        return try context.fetch(descriptor)
+    }
+
+    /// Fetches recent sessions up to the specified limit
+    func fetchRecentSessions(limit: Int) throws -> [DailySession] {
+        var descriptor = FetchDescriptor<DailySession>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
         return try context.fetch(descriptor)
     }
 
