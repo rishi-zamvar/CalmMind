@@ -10,7 +10,8 @@ final class CalmMindUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        // Verify the app launched with the main content
-        XCTAssertTrue(app.staticTexts["CalmMind"].exists)
+        // Verify the app launched with the tab bar (main content)
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
     }
 }
