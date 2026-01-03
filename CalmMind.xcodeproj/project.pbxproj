@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01C31CDEA88943A9BAAF2613 /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16C682AE78E81CB43D00549 /* OpenAIService.swift */; };
 		07B59C92C3B28F66BB7FA84C /* MemoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434DD625134C62C747F9640A /* MemoryRepository.swift */; };
 		15779CF67852B7B84E1E7C01 /* RetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 128526DFF8EBEDEA2243F7D2 /* RetryPolicy.swift */; };
 		16FBEF99B8E09015AC0F3DA2 /* RetryPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2993F5E03DB026BFCC8FBE2 /* RetryPolicyTests.swift */; };
@@ -19,6 +20,7 @@
 		41DF3F44F1D504E3B985B133 /* MessageValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3DF5023595BFA10D5D438E /* MessageValidator.swift */; };
 		4416E1825E7B6E67FCCB8E8F /* MockURLSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E0DA8BBF88E84A17D18AE4 /* MockURLSessionTests.swift */; };
 		444434F1729769AF7CE2E363 /* SecretsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD803D083BC146D7894295B0 /* SecretsStoreTests.swift */; };
+		4A6443EFC16CC75E94D2E3CC /* TestSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B262F2C9E514543EADA9A84 /* TestSecrets.swift */; };
 		4F94A5C55D345243CD100910 /* JournalEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599832DDE93C8350ABD2F8C6 /* JournalEntry.swift */; };
 		5175EF266B42E77289420B3A /* SessionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37EC988F1B781DB3CC44696 /* SessionRepository.swift */; };
 		52D2F2EDA1A87951C51F162F /* JournalRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F59F166A404599162922C0 /* JournalRepositoryTests.swift */; };
@@ -28,12 +30,14 @@
 		6B2ED7194422A8559352312A /* MockURLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EEB436D2C4E84EFC325672 /* MockURLSession.swift */; };
 		7102D71B81CD292E9691A24C /* TodoRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0518B911EFAE466620AD0E78 /* TodoRepository.swift */; };
 		736F27547003FA2BC41E67F1 /* MemoryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816566BC36D79C07E6CB7D47 /* MemoryRepositoryTests.swift */; };
+		785EBBA1FD806640AE6B4A05 /* OpenAIServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DD64C13E194DD8D19EA2DC /* OpenAIServiceTests.swift */; };
 		79D2323CA376280CCAD802CE /* JournalConstraintsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B20F3FBDEABFA69E45DE873 /* JournalConstraintsTests.swift */; };
 		867FE4A6514E4275B1E9E4AF /* CalmMindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD9DDFA04BBBCB8FAD800249 /* CalmMindTests.swift */; };
 		8E9A45E69B5569CF35935BEF /* TodoTitleNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95652605B0D34E9D251630D7 /* TodoTitleNormalizer.swift */; };
 		91992CD2891FE6C2CDB9FCF9 /* MessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD057BC08FF34734CDF58C1 /* MessageRepository.swift */; };
 		953C29A1906134B21D67618A /* TodoRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA9EEA081E1645E1B1991CFD /* TodoRepositoryTests.swift */; };
 		95574E1038DD2D4A395AFB1A /* JournalConstraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF157303B30D026A4986276 /* JournalConstraints.swift */; };
+		955C0E6048A400A6944C9127 /* OpenAILiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58056FCC17652EE3B92B8044 /* OpenAILiveTests.swift */; };
 		968DC48EF9CBEABA379BC7AC /* CalmMindApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0962A367C3E229C8867024C5 /* CalmMindApp.swift */; };
 		98D9E64D7F433345B4205A69 /* RateLimiterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2D1BA24216FB59632B480C /* RateLimiterTests.swift */; };
 		A16FDDA598CB707403AB6AA3 /* MockSecretsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A429B4BE12F69F2AEFE1DF1 /* MockSecretsStore.swift */; };
@@ -90,6 +94,7 @@
 		4DA6BCE4AF75D21484FD52FE /* ChatMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageTests.swift; sourceTree = "<group>"; };
 		4EC886EA49C4B8A6941A9443 /* SessionRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRepositoryTests.swift; sourceTree = "<group>"; };
 		5554501C129AEA0A2B779C0E /* RateLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateLimiter.swift; sourceTree = "<group>"; };
+		58056FCC17652EE3B92B8044 /* OpenAILiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAILiveTests.swift; sourceTree = "<group>"; };
 		599832DDE93C8350ABD2F8C6 /* JournalEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEntry.swift; sourceTree = "<group>"; };
 		5FD057BC08FF34734CDF58C1 /* MessageRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRepository.swift; sourceTree = "<group>"; };
 		61E0DA8BBF88E84A17D18AE4 /* MockURLSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLSessionTests.swift; sourceTree = "<group>"; };
@@ -97,6 +102,8 @@
 		62F723F5C05BECD0E23E51D1 /* DailySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySession.swift; sourceTree = "<group>"; };
 		630C141DF065A6B3F6824975 /* JournalRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalRepository.swift; sourceTree = "<group>"; };
 		648F5490D57E1FF3C1B2A22A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		68DD64C13E194DD8D19EA2DC /* OpenAIServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIServiceTests.swift; sourceTree = "<group>"; };
+		6B262F2C9E514543EADA9A84 /* TestSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSecrets.swift; sourceTree = "<group>"; };
 		6D3DF5023595BFA10D5D438E /* MessageValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageValidator.swift; sourceTree = "<group>"; };
 		78194749963E427976F76706 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		7B20F3FBDEABFA69E45DE873 /* JournalConstraintsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalConstraintsTests.swift; sourceTree = "<group>"; };
@@ -113,6 +120,7 @@
 		C2993F5E03DB026BFCC8FBE2 /* RetryPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryPolicyTests.swift; sourceTree = "<group>"; };
 		CA9EEA081E1645E1B1991CFD /* TodoRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoRepositoryTests.swift; sourceTree = "<group>"; };
 		D03A2507ED44B918D0E3EAFA /* SecretsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretsStore.swift; sourceTree = "<group>"; };
+		D16C682AE78E81CB43D00549 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
 		D7AEC6EC9EF8F613F780F581 /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		D92118046BDC9B7FF5A97258 /* JournalEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEntryTests.swift; sourceTree = "<group>"; };
 		DD803D083BC146D7894295B0 /* SecretsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretsStoreTests.swift; sourceTree = "<group>"; };
@@ -143,6 +151,14 @@
 				AC864F5BC69DA49D7AEC7458 /* CalmMindUITests */,
 				38154912843A9FF5E925DBBF /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		10FD94707339F6D9CE027C22 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				6B262F2C9E514543EADA9A84 /* TestSecrets.swift */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 		183B7D1212E6999198945A0C /* App */ = {
@@ -202,6 +218,7 @@
 			isa = PBXGroup;
 			children = (
 				61E0DA8BBF88E84A17D18AE4 /* MockURLSessionTests.swift */,
+				68DD64C13E194DD8D19EA2DC /* OpenAIServiceTests.swift */,
 				FC2D1BA24216FB59632B480C /* RateLimiterTests.swift */,
 				C2993F5E03DB026BFCC8FBE2 /* RetryPolicyTests.swift */,
 			);
@@ -253,6 +270,7 @@
 		CE7E19EDF8592E1D85D00DA0 /* CalmMindTests */ = {
 			isa = PBXGroup;
 			children = (
+				10FD94707339F6D9CE027C22 /* Helpers */,
 				FD5F7F2144A827A74CB0036A /* Integration */,
 				88B3F5087D1705B7A5C7A319 /* Mocks */,
 				892F1F46B0E76A903B8FEC05 /* Unit */,
@@ -284,6 +302,7 @@
 		D96C6FED70090F90066E951D /* Network */ = {
 			isa = PBXGroup;
 			children = (
+				D16C682AE78E81CB43D00549 /* OpenAIService.swift */,
 				F1CA56133220EB0635188E59 /* OpenAIServiceProtocol.swift */,
 				3BFB93CCF0084C4C68845D5A /* OpenAITypes.swift */,
 				5554501C129AEA0A2B779C0E /* RateLimiter.swift */,
@@ -317,6 +336,7 @@
 		FD5F7F2144A827A74CB0036A /* Integration */ = {
 			isa = PBXGroup;
 			children = (
+				58056FCC17652EE3B92B8044 /* OpenAILiveTests.swift */,
 			);
 			path = Integration;
 			sourceTree = "<group>";
@@ -463,6 +483,7 @@
 				07B59C92C3B28F66BB7FA84C /* MemoryRepository.swift in Sources */,
 				91992CD2891FE6C2CDB9FCF9 /* MessageRepository.swift in Sources */,
 				41DF3F44F1D504E3B985B133 /* MessageValidator.swift in Sources */,
+				01C31CDEA88943A9BAAF2613 /* OpenAIService.swift in Sources */,
 				57482D75A3BE0CDE5A61837D /* OpenAIServiceProtocol.swift in Sources */,
 				C1BADCC671FF3A48DE85812A /* OpenAITypes.swift in Sources */,
 				E455BED846791C7E78A6B0CE /* RateLimiter.swift in Sources */,
@@ -494,10 +515,13 @@
 				A16FDDA598CB707403AB6AA3 /* MockSecretsStore.swift in Sources */,
 				6B2ED7194422A8559352312A /* MockURLSession.swift in Sources */,
 				4416E1825E7B6E67FCCB8E8F /* MockURLSessionTests.swift in Sources */,
+				955C0E6048A400A6944C9127 /* OpenAILiveTests.swift in Sources */,
+				785EBBA1FD806640AE6B4A05 /* OpenAIServiceTests.swift in Sources */,
 				98D9E64D7F433345B4205A69 /* RateLimiterTests.swift in Sources */,
 				16FBEF99B8E09015AC0F3DA2 /* RetryPolicyTests.swift in Sources */,
 				444434F1729769AF7CE2E363 /* SecretsStoreTests.swift in Sources */,
 				A9C880A67B62EF74007044AD /* SessionRepositoryTests.swift in Sources */,
+				4A6443EFC16CC75E94D2E3CC /* TestSecrets.swift in Sources */,
 				AC804F574DE2B53D62470A47 /* TodoItemTests.swift in Sources */,
 				953C29A1906134B21D67618A /* TodoRepositoryTests.swift in Sources */,
 				2AE321AE48796568D21128DE /* TodoTitleNormalizerTests.swift in Sources */,
