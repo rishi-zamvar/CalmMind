@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
+  TEST_DESTINATION: "platform=iOS Simulator,name=iPhone 15"
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s $DEVELOPER_DIR
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Run Unit Tests
+        run: |
+          xcodebuild test \
+            -scheme CalmMind \
+            -destination "$TEST_DESTINATION" \
+            -only-testing:CalmMindTests \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: TestResults.xcresult
+
+  ui-tests:
+    name: UI Smoke Tests
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s $DEVELOPER_DIR
+
+      - name: Run UI Tests
+        run: |
+          xcodebuild test \
+            -scheme CalmMind \
+            -destination "$TEST_DESTINATION" \
+            -only-testing:CalmMindUITests \
+            -resultBundlePath UITestResults.xcresult
+
+      - name: Upload UI Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-results
+          path: UITestResults.xcresult
+
+  safety-check:
+    name: Safety Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Safety Checks
+        run: .claude/scripts/check_safety.sh

@@ -9,7 +9,10 @@ After EVERY code change, Claude MUST:
 ## On Test Failure
 - Do NOT proceed to next task
 - **Re-run failing tests ONLY first** (saves time, prevents thrash):
-  `xcodebuild test -scheme CalmMind -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:CalmMindTests/<TestClass>/<testMethod>`
+  ```bash
+  xcodebuild test -scheme CalmMind -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:CalmMindTests/TestClass/testMethod
+  ```
+  Use the **exact failing test identifier** as printed by xcodebuild output (e.g., `CalmMindTests/SafetyClassifierTests/test_detectsCrisis_suicidalIdeation`)
 - Once failing tests pass, run FULL unit test suite
 - Read `.claude/hooks/on_failure.md` for recovery protocol
 - Fix the failing test before continuing
