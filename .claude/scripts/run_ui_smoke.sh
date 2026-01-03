@@ -10,7 +10,7 @@ if [ ! -d "CalmMind.xcodeproj" ]; then
 fi
 
 # Allow CI to override destination
-DESTINATION="${TEST_DESTINATION:-platform=iOS Simulator,name=iPhone 15}"
+DESTINATION="${TEST_DESTINATION:-platform=iOS Simulator,name=iPhone 17}"
 
 # Remove old result bundle if exists
 rm -rf UITestResults.xcresult

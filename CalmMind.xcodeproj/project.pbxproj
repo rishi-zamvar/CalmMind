@@ -11,7 +11,9 @@
 		867FE4A6514E4275B1E9E4AF /* CalmMindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD9DDFA04BBBCB8FAD800249 /* CalmMindTests.swift */; };
 		968DC48EF9CBEABA379BC7AC /* CalmMindApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0962A367C3E229C8867024C5 /* CalmMindApp.swift */; };
 		AADD0951D807DA1950217E6A /* CalmMindUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B82E92C2DF0BA876FE602881 /* CalmMindUITestsLaunchTests.swift */; };
+		C1CE539185E5F18B3AA72E57 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FEE447F0947B987D54FC3D1 /* AppConfigTests.swift */; };
 		C85F9EA6994D97957D867BEF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934F5EE728C182CE14E66FFC /* ContentView.swift */; };
+		DD63F0FFE8C996E1C4889237 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78194749963E427976F76706 /* AppConfig.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +38,9 @@
 		0EA4D8F7E339AA62A2653643 /* CalmMindUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindUITests.swift; sourceTree = "<group>"; };
 		25CB304335679843212BC9B0 /* CalmMindTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CalmMindTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2818DFB8C197D7BEE125331C /* CalmMind.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CalmMind.entitlements; sourceTree = "<group>"; };
+		2FEE447F0947B987D54FC3D1 /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		648F5490D57E1FF3C1B2A22A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		78194749963E427976F76706 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		934F5EE728C182CE14E66FFC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B82E92C2DF0BA876FE602881 /* CalmMindUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		BD9DDFA04BBBCB8FAD800249 /* CalmMindTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalmMindTests.swift; sourceTree = "<group>"; };
@@ -74,6 +78,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		62850A1027A6D4EC99A6DEDC /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				78194749963E427976F76706 /* AppConfig.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		892F1F46B0E76A903B8FEC05 /* Unit */ = {
+			isa = PBXGroup;
+			children = (
+				F1E74B99C72517EBCFA08199 /* Config */,
+			);
+			path = Unit;
+			sourceTree = "<group>";
+		};
 		AC864F5BC69DA49D7AEC7458 /* CalmMindUITests */ = {
 			isa = PBXGroup;
 			children = (
@@ -86,15 +106,25 @@
 		CE7E19EDF8592E1D85D00DA0 /* CalmMindTests */ = {
 			isa = PBXGroup;
 			children = (
+				892F1F46B0E76A903B8FEC05 /* Unit */,
 				BD9DDFA04BBBCB8FAD800249 /* CalmMindTests.swift */,
 			);
 			path = CalmMindTests;
+			sourceTree = "<group>";
+		};
+		F1E74B99C72517EBCFA08199 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				2FEE447F0947B987D54FC3D1 /* AppConfigTests.swift */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		FE0E97A388F63664A2F64712 /* CalmMind */ = {
 			isa = PBXGroup;
 			children = (
 				183B7D1212E6999198945A0C /* App */,
+				62850A1027A6D4EC99A6DEDC /* Config */,
 				2818DFB8C197D7BEE125331C /* CalmMind.entitlements */,
 				648F5490D57E1FF3C1B2A22A /* Info.plist */,
 			);
@@ -216,6 +246,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD63F0FFE8C996E1C4889237 /* AppConfig.swift in Sources */,
 				968DC48EF9CBEABA379BC7AC /* CalmMindApp.swift in Sources */,
 				C85F9EA6994D97957D867BEF /* ContentView.swift in Sources */,
 			);
@@ -225,6 +256,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1CE539185E5F18B3AA72E57 /* AppConfigTests.swift in Sources */,
 				867FE4A6514E4275B1E9E4AF /* CalmMindTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
