@@ -63,6 +63,7 @@ UITestResults.xcresult
 # Secrets - NEVER commit these
 *.xcconfig
 !Config/Base.xcconfig
+!Config/Secrets.xcconfig.example
 Secrets/
 *.pem
 *.p12

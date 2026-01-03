@@ -37,16 +37,12 @@ enum TestSecrets {
     // MARK: - Private
 
     private static func readFromXCConfig() -> String? {
-        // Get path to xcconfig file
-        let bundle = Bundle(for: BundleToken.self)
-        guard let projectPath = bundle.resourcePath?
-            .components(separatedBy: "/Build/")
-            .first else {
-            return nil
-        }
-
-        let configPath = (projectPath as NSString)
-            .appendingPathComponent("Config/Secrets.xcconfig")
+        // Use #file to get source location, then navigate to Config/
+        let thisFile = #file
+        let testsDir = (thisFile as NSString).deletingLastPathComponent  // Helpers/
+        let calmMindTestsDir = (testsDir as NSString).deletingLastPathComponent  // CalmMindTests/
+        let projectDir = (calmMindTestsDir as NSString).deletingLastPathComponent  // CalmMind/
+        let configPath = (projectDir as NSString).appendingPathComponent("Config/Secrets.xcconfig")
 
         guard FileManager.default.fileExists(atPath: configPath),
               let contents = try? String(contentsOfFile: configPath, encoding: .utf8) else {
@@ -70,8 +66,5 @@ enum TestSecrets {
         return nil
     }
 }
-
-// Helper class to get bundle
-private class BundleToken {}
 
 import XCTest
