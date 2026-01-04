@@ -13,19 +13,32 @@ struct ChatView: View {
             // Messages list
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 16) {  // Increased from 12 to 16
+                    LazyVStack(spacing: 16) {
                         ForEach(viewModel.messages) { message in
-                            MessageBubble(message: message)
-                                .id(message.id)
+                            MessageBubble(
+                                message: message,
+                                onRetry: {
+                                    Task {
+                                        await viewModel.retryMessage(message)
+                                    }
+                                }
+                            )
+                            .id(message.id)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .opacity
+                            ))
                         }
 
                         if viewModel.isLoading {
                             TypingIndicator()
                                 .padding(.horizontal)
+                                .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                         }
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 8)
+                    .animation(DesignTokens.messageEntrance, value: viewModel.messages.count)
                 }
                 .onChange(of: viewModel.messages.count) { _, _ in
                     if let lastId = viewModel.lastMessageId {

@@ -3,6 +3,7 @@ import SwiftUI
 /// A single message bubble in the chat
 struct MessageBubble: View {
     let message: ChatMessage
+    var onRetry: (() -> Void)? = nil
 
     private var isUser: Bool {
         message.role == .user
@@ -14,6 +15,14 @@ struct MessageBubble: View {
 
     private var textColor: Color {
         isUser ? .white : DesignTokens.Colors.textPrimary
+    }
+
+    private var isFailed: Bool {
+        message.sendStatus == .failed
+    }
+
+    private var isSending: Bool {
+        message.sendStatus == .sending
     }
 
     var body: some View {
@@ -28,7 +37,7 @@ struct MessageBubble: View {
                     .foregroundColor(textColor)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(bubbleColor)
+                    .background(bubbleColor.opacity(isSending ? 0.7 : 1.0))
                     .clipShape(ChatBubbleShape(isUser: isUser))
                     .shadow(
                         color: isUser ? Color.clear : DesignTokens.cardShadowColor,
@@ -37,10 +46,36 @@ struct MessageBubble: View {
                         y: isUser ? 0 : DesignTokens.cardShadowY / 2
                     )
 
-                Text(formatTime(message.timestamp))
-                    .font(DesignTokens.Typography.meta)
-                    .foregroundColor(DesignTokens.Colors.textTertiary)
-                    .padding(.horizontal, 4)
+                // Status row: timestamp + failure state
+                HStack(spacing: 6) {
+                    if isFailed {
+                        // Failure indicator with retry
+                        Button(action: { onRetry?() }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "exclamationmark.circle")
+                                Text("Not sent · Tap to retry")
+                            }
+                            .font(DesignTokens.Typography.meta)
+                            .foregroundColor(DesignTokens.Colors.destructive)
+                        }
+                        .buttonStyle(.plain)
+                    } else if isSending {
+                        // Sending indicator
+                        HStack(spacing: 4) {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                            Text("Sending...")
+                        }
+                        .font(DesignTokens.Typography.meta)
+                        .foregroundColor(DesignTokens.Colors.textTertiary)
+                    } else {
+                        // Normal timestamp
+                        Text(formatTime(message.timestamp))
+                            .font(DesignTokens.Typography.meta)
+                            .foregroundColor(DesignTokens.Colors.textTertiary)
+                    }
+                }
+                .padding(.horizontal, 4)
             }
 
             if !isUser {

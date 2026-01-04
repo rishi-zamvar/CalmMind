@@ -87,6 +87,9 @@ enum DesignTokens {
 
     static let defaultAnimation = Animation.timingCurve(0.2, 0.8, 0.2, 1, duration: 0.22)
 
+    /// Spring animation for message entrance (float up effect)
+    static let messageEntrance = Animation.spring(response: 0.42, dampingFraction: 0.82)
+
     // MARK: - Haptics
 
     enum Haptics {
