@@ -27,6 +27,7 @@ final class UserPreferences {
         static let deviceSalt = "deviceSalt"
         static let userName = "userName"
         static let autoCreateTodos = "autoCreateTodos"
+        static let autoJournalingEnabled = "autoJournalingEnabled"
         static let installedVersion = "installedBuildVersion"
     }
 
@@ -130,6 +131,16 @@ final class UserPreferences {
         set { defaults.set(newValue, forKey: Keys.autoCreateTodos) }
     }
 
+    /// Whether to auto-capture messages to journal
+    /// Defaults to FALSE (opt-in, not opt-out) - requires explicit consent
+    var autoJournalingEnabled: Bool {
+        get {
+            // Default to false - requires explicit opt-in
+            defaults.bool(forKey: Keys.autoJournalingEnabled)
+        }
+        set { defaults.set(newValue, forKey: Keys.autoJournalingEnabled) }
+    }
+
     // MARK: - Version Tracking
 
     /// Stamp the installed version on first launch (for migrations)
@@ -185,7 +196,8 @@ final class UserPreferences {
             Keys.lastNudgeMorningAt,
             Keys.lastNudgeEveningAt,
             Keys.userName,
-            Keys.autoCreateTodos
+            Keys.autoCreateTodos,
+            Keys.autoJournalingEnabled
             // Note: deviceSalt and installedVersion are intentionally NOT reset
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }

@@ -109,6 +109,7 @@ final class KeychainSecretsStore: SecretsStore {
     }
 
     func getAPIKey() -> String? {
+        // First, try Keychain
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -122,18 +123,63 @@ final class KeychainSecretsStore: SecretsStore {
 
         // Handle device locked case gracefully
         if status == errSecNotAvailable || status == errSecInteractionNotAllowed {
-            // Device locked - return nil, caller should handle
-            return nil
+            // Device locked - fall through to xcconfig fallback
+        } else if status == errSecSuccess,
+                  let data = result as? Data,
+                  let key = String(data: data, encoding: .utf8) {
+            return key
         }
 
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let key = String(data: data, encoding: .utf8) else {
-            return nil
+        // DEBUG fallback: Try xcconfig file for development testing
+        // Skip fallback when running tests (test bundle is loaded)
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            return readAPIKeyFromXCConfig()
         }
-
-        return key
+        #endif
+        return nil
     }
+
+    #if DEBUG
+    /// Read API key from xcconfig for development testing
+    private func readAPIKeyFromXCConfig() -> String? {
+        // Try Bundle main path first (if Info.plist has it)
+        if let bundleKey = Bundle.main.object(forInfoDictionaryKey: "OPENAI_API_KEY") as? String,
+           !bundleKey.isEmpty,
+           !bundleKey.hasPrefix("$(") {  // Not an unexpanded variable
+            return bundleKey
+        }
+
+        // Try reading directly from xcconfig file
+        guard let configPath = Bundle.main.path(forResource: "Secrets", ofType: "xcconfig") else {
+            // Try project directory path for simulator
+            let projectPath = "/Users/rishizamvar/Desktop/CalmMind/Config/Secrets.xcconfig"
+            return parseXCConfig(at: projectPath)
+        }
+        return parseXCConfig(at: configPath)
+    }
+
+    private func parseXCConfig(at path: String) -> String? {
+        guard FileManager.default.fileExists(atPath: path),
+              let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
+            return nil
+        }
+
+        for line in contents.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("OPENAI_API_KEY") {
+                let parts = trimmed.components(separatedBy: "=")
+                if parts.count >= 2 {
+                    let value = parts[1].trimmingCharacters(in: .whitespaces)
+                    if !value.isEmpty && value != "sk-your-key-here" {
+                        return value
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    #endif
 
     func deleteAPIKey() {
         let query: [String: Any] = [

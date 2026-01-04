@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("eveningNotificationsEnabled") private var eveningNotifications = true
     @AppStorage("privacyMode") private var privacyMode = false
     @AppStorage("notificationPrivacyMode") private var notificationPrivacyMode = "detailed"
+    @AppStorage("autoJournalingEnabled") private var autoJournalingEnabled = false
 
     @State private var showingDeleteConfirmation = false
     @State private var showingAPIKeySheet = false
@@ -23,8 +24,25 @@ struct SettingsView: View {
                 }
             } header: {
                 Text("Notifications")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
             } footer: {
                 Text("Minimal mode hides todo titles and mood references from notifications.")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textTertiary)
+            }
+
+            // Journal section
+            Section {
+                Toggle("Auto-save to Journal", isOn: $autoJournalingEnabled)
+            } header: {
+                Text("Journal")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
+            } footer: {
+                Text("When enabled, your messages are saved as journal events. At the end of each day, they're synthesized into a personal journal entry.")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textTertiary)
             }
 
             // Privacy section
@@ -32,70 +50,109 @@ struct SettingsView: View {
                 Toggle("Privacy Mode", isOn: $privacyMode)
             } header: {
                 Text("Privacy")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
             } footer: {
                 Text("When enabled, private items are excluded from AI context.")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textTertiary)
             }
 
             // API section
             Section {
-                Button("Update API Key") {
+                Button {
                     showingAPIKeySheet = true
+                } label: {
+                    Text("Update API Key")
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Colors.warmClay)
                 }
             } header: {
                 Text("OpenAI")
-            }
-
-            // Data section
-            Section {
-                Button("Export All Data") {
-                    // TODO: Implement data export
-                }
-
-                Button("Delete All Data", role: .destructive) {
-                    showingDeleteConfirmation = true
-                }
-            } header: {
-                Text("Data")
-            } footer: {
-                Text("Deleting data is permanent and cannot be undone.")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
             }
 
             // About section
             Section {
                 HStack {
                     Text("Version")
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Colors.textPrimary)
                     Spacer()
                     Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                        .foregroundColor(.secondary)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Colors.textSecondary)
                 }
 
                 Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundColor(DesignTokens.Colors.warmClay)
                 Link("Terms of Service", destination: URL(string: "https://example.com/terms")!)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundColor(DesignTokens.Colors.warmClay)
             } header: {
                 Text("About")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
             }
 
-            // Crisis resources - always visible
+            // Crisis resources - always visible (calm styling)
             Section {
                 Link(destination: URL(string: "tel:988")!) {
                     HStack {
                         Image(systemName: "phone.fill")
-                            .foregroundColor(.green)
-                        VStack(alignment: .leading) {
+                            .foregroundColor(DesignTokens.Colors.sage)
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("988 Crisis Lifeline")
-                                .foregroundColor(.primary)
+                                .font(DesignTokens.Typography.body)
+                                .foregroundColor(DesignTokens.Colors.textPrimary)
                             Text("Call or text anytime")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(DesignTokens.Typography.meta)
+                                .foregroundColor(DesignTokens.Colors.textSecondary)
                         }
                     }
                 }
             } header: {
                 Text("Crisis Resources")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
             } footer: {
                 Text("Available 24/7 for anyone in crisis.")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textTertiary)
+            }
+
+            // Data section (destructive - extra spacing, subtle background)
+            Section {
+                Button {
+                    // TODO: Implement data export
+                } label: {
+                    Text("Export All Data")
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Colors.warmClay)
+                }
+
+                Button {
+                    showingDeleteConfirmation = true
+                } label: {
+                    Text("Delete All Data")
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(DesignTokens.Colors.destructive)
+                }
+            } header: {
+                Text("Data")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
+                    .padding(.top, 16)
+            } footer: {
+                Text("Deleting data is permanent and cannot be undone.")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textTertiary)
             }
         }
+        .scrollContentBackground(.hidden)
+        .ambientBackground()
         .navigationTitle("Settings")
         .alert("Delete All Data?", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}

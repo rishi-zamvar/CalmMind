@@ -15,12 +15,12 @@ struct JournalDetailView: View {
                 HStack {
                     VStack(alignment: .leading) {
                         Text(formatDate(entry.entryDate))
-                            .font(.title2)
-                            .fontWeight(.bold)
+                            .font(DesignTokens.Typography.sectionHeader)
+                            .foregroundColor(DesignTokens.Colors.textPrimary)
 
                         Text(formatWeekday(entry.entryDate))
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Colors.textSecondary)
                     }
 
                     Spacer()
@@ -37,32 +37,72 @@ struct JournalDetailView: View {
                 }
                 .padding(.horizontal)
 
-                Divider()
-
-                // Entry content
+                // Entry content (paper feel)
                 if isEditing {
                     TextEditor(text: $editedText)
+                        .font(DesignTokens.Typography.body)
                         .frame(minHeight: 200)
+                        .padding()
+                        .background(DesignTokens.Colors.elevatedSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.card))
+                        .cardShadow()
                         .padding(.horizontal)
                 } else {
-                    Text(entry.fullText)
+                    Text(entry.displayText.isEmpty ? "What's on your mind today?" : entry.displayText)
+                        .font(DesignTokens.Typography.body)
+                        .foregroundColor(entry.displayText.isEmpty ? DesignTokens.Colors.textTertiary : DesignTokens.Colors.textPrimary)
+                        .italic(entry.displayText.isEmpty)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(DesignTokens.Colors.elevatedSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.card))
+                        .cardShadow()
                         .padding(.horizontal)
+                }
+
+                // Auto-journaling events section (if any)
+                if !entry.events.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Captured Moments")
+                            .font(DesignTokens.Typography.sectionHeader)
+                            .foregroundColor(DesignTokens.Colors.textSecondary)
+
+                        ForEach(entry.includedEvents.sorted { $0.timestamp < $1.timestamp }) { event in
+                            HStack(alignment: .top) {
+                                Text("•")
+                                    .foregroundColor(DesignTokens.Colors.textTertiary)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(event.userText)
+                                        .font(DesignTokens.Typography.body)
+                                        .foregroundColor(DesignTokens.Colors.textPrimary)
+                                    Text(formatTime(event.timestamp))
+                                        .font(DesignTokens.Typography.meta)
+                                        .foregroundColor(DesignTokens.Colors.textTertiary)
+                                }
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(DesignTokens.Colors.subtleSection)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.card))
+                    .padding(.horizontal)
                 }
 
                 // Summary if available
                 if let summary = entry.summary {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Summary")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                            .font(DesignTokens.Typography.sectionHeader)
+                            .foregroundColor(DesignTokens.Colors.textSecondary)
 
                         Text(summary)
-                            .font(.subheadline)
+                            .font(DesignTokens.Typography.body)
                             .italic()
+                            .foregroundColor(DesignTokens.Colors.textPrimary)
                     }
                     .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
+                    .background(DesignTokens.Colors.subtleSection)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.card))
                     .padding(.horizontal)
                 }
 
@@ -70,6 +110,7 @@ struct JournalDetailView: View {
             }
             .padding(.top)
         }
+        .ambientBackground()
         .navigationTitle("Entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -81,11 +122,13 @@ struct JournalDetailView: View {
                             isEditing = false
                         }
                     }
+                    .foregroundColor(DesignTokens.Colors.warmClay)
                 } else {
                     Button("Edit") {
                         editedText = entry.fullText
                         isEditing = true
                     }
+                    .foregroundColor(DesignTokens.Colors.warmClay)
                 }
             }
 
@@ -94,10 +137,12 @@ struct JournalDetailView: View {
                     Button("Cancel") {
                         isEditing = false
                     }
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
                 } else {
                     Button("Close") {
                         dismiss()
                     }
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
                 }
             }
         }
@@ -114,9 +159,15 @@ struct JournalDetailView: View {
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
     }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
 }
 
-/// Mood score picker
+/// Mood score picker (warm styling)
 struct MoodPicker: View {
     let selectedMood: Int?
     let onSelect: (Int) -> Void
@@ -141,16 +192,19 @@ struct MoodPicker: View {
                 if let mood = selectedMood {
                     Text(moodEmoji(for: mood))
                     Text("\(mood)")
+                        .font(DesignTokens.Typography.body)
                 } else {
                     Text("Set Mood")
+                        .font(DesignTokens.Typography.body)
                 }
                 Image(systemName: "chevron.down")
                     .font(.caption)
             }
+            .foregroundColor(DesignTokens.Colors.textPrimary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
+            .background(DesignTokens.Colors.subtleSection)
+            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.button))
         }
     }
 
@@ -166,7 +220,7 @@ struct MoodPicker: View {
     }
 }
 
-/// Editor for creating new journal entries
+/// Editor for creating new journal entries (warm paper feel)
 struct JournalEditorView: View {
     @Bindable var viewModel: JournalViewModel
     @Binding var isPresented: Bool
@@ -176,20 +230,36 @@ struct JournalEditorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("How was your day?")
-                .font(.headline)
+                .font(DesignTokens.Typography.sectionHeader)
+                .foregroundColor(DesignTokens.Colors.textPrimary)
                 .padding(.horizontal)
 
             TextEditor(text: $text)
+                .font(DesignTokens.Typography.body)
                 .focused($isFocused)
                 .frame(minHeight: 200)
-                .padding(8)
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
+                .padding()
+                .scrollContentBackground(.hidden)
+                .background(DesignTokens.Colors.elevatedSurface)
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.card))
+                .cardShadow()
                 .padding(.horizontal)
+                .overlay(alignment: .topLeading) {
+                    if text.isEmpty {
+                        Text("What's on your mind today?")
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Colors.textTertiary)
+                            .italic()
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 24)
+                            .allowsHitTesting(false)
+                    }
+                }
 
             Spacer()
         }
         .padding(.top)
+        .ambientBackground()
         .navigationTitle("New Entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -200,6 +270,7 @@ struct JournalEditorView: View {
                         isPresented = false
                     }
                 }
+                .foregroundColor(DesignTokens.Colors.warmClay)
                 .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
 
@@ -207,6 +278,7 @@ struct JournalEditorView: View {
                 Button("Cancel") {
                     isPresented = false
                 }
+                .foregroundColor(DesignTokens.Colors.textSecondary)
             }
         }
         .onAppear {

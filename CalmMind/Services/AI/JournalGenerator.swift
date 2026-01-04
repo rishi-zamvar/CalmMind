@@ -12,8 +12,13 @@ struct GeneratedJournalEntry: Sendable {
     let date: Date
 }
 
+/// Protocol for journal synthesis operations (for testability)
+protocol JournalSynthesizerProtocol: Sendable {
+    func synthesizeJournal(from events: [JournalEvent]) async throws -> String
+}
+
 /// Generates journal entries and summaries from conversations
-final class JournalGenerator: Sendable {
+final class JournalGenerator: Sendable, JournalSynthesizerProtocol {
 
     // MARK: - Configuration
 
@@ -53,6 +58,24 @@ final class JournalGenerator: Sendable {
     10 = Very positive/happy
 
     Respond with ONLY a single number from 1 to 10.
+    """
+
+    private static let synthesisPrompt = """
+    Write a personal journal entry based ONLY on these exact quotes from today.
+    You MUST NOT invent feelings or facts not in the quotes.
+
+    CRITICAL RULES:
+    - First person, casual voice ("Ugh", "idk", "tho", "bc")
+    - Sound like texting yourself, NOT polished writing
+    - NO metaphors or artistic phrases
+    - Only infer feelings EXPLICITLY stated or STRONGLY implied
+    - If inferring, phrase tentatively: "I think I might be..." not "I felt..."
+    - 2-3 short paragraphs, raw and real
+    - If quotes mention sensitive topics, validate without diagnosing
+    - Do NOT introduce new named entities not in the quotes
+    - Max 1800 characters total
+
+    Today's quotes:
     """
 
     // MARK: - Dependencies
@@ -123,6 +146,41 @@ final class JournalGenerator: Sendable {
             tools: nil,
             model: Self.model,
             maxTokens: 100
+        )
+
+        return response.content ?? ""
+    }
+
+    // MARK: - Auto-Journaling Synthesis
+
+    /// Synthesize a journal entry from captured events
+    /// Uses temperature=0 for deterministic output
+    /// - Parameter events: The journal events to synthesize
+    /// - Returns: First-person narrative in casual voice
+    func synthesizeJournal(from events: [JournalEvent]) async throws -> String {
+        guard !events.isEmpty else {
+            return ""
+        }
+
+        // Build quotes from events (already truncated at write time)
+        let quotes = events
+            .sorted { $0.timestamp < $1.timestamp }
+            .map { "- \"\($0.userText)\"" }
+            .joined(separator: "\n")
+
+        let fullPrompt = Self.synthesisPrompt + "\n" + quotes + "\n\nWrite the journal entry:"
+
+        let messages = [
+            OpenAIMessage(role: .user, content: fullPrompt)
+        ]
+
+        // Use temperature=0 for deterministic output
+        let response = try await openAIService.sendChatCompletion(
+            messages: messages,
+            tools: nil,
+            model: Self.model,
+            maxTokens: Self.maxTokens,
+            temperature: 0.0
         )
 
         return response.content ?? ""

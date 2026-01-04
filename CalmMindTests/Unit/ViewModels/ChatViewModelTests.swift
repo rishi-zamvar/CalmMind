@@ -58,12 +58,43 @@ final class ChatViewModelTests: XCTestCase {
         // Load session (no existing session)
         await sut.loadSession()
 
-        // Should have empty messages but session exists
+        // Without a welcome message set, messages should be empty
         XCTAssertTrue(sut.messages.isEmpty)
 
         // Session should be created
         let sessions = try sessionRepo.fetchRecentSessions(limit: 10)
         XCTAssertEqual(sessions.count, 1)
+
+        // Welcome message should have been attempted
+        XCTAssertEqual(mockOrchestrator.welcomeCallCount, 1)
+    }
+
+    func test_welcomeMessage_generatedOnEmptySession() async throws {
+        mockOrchestrator.mockWelcomeMessage = "Good morning! How are you feeling today?"
+
+        // Load session (no existing messages)
+        await sut.loadSession()
+
+        // Should have the welcome message
+        XCTAssertEqual(sut.messages.count, 1)
+        XCTAssertEqual(sut.messages.first?.content, "Good morning! How are you feeling today?")
+        XCTAssertEqual(sut.messages.first?.role, .assistant)
+    }
+
+    func test_welcomeMessage_skippedIfHasMessages() async throws {
+        // Create a session with existing messages
+        let session = try sessionRepo.getOrCreate(for: Date())
+        let message = ChatMessage(content: "Previous message", role: .user)
+        try messageRepo.save(message, to: session)
+
+        mockOrchestrator.mockWelcomeMessage = "This should not appear"
+
+        await sut.loadSession()
+
+        // Should not call generateWelcomeMessage if session has messages
+        XCTAssertEqual(mockOrchestrator.welcomeCallCount, 0)
+        XCTAssertEqual(sut.messages.count, 1)
+        XCTAssertEqual(sut.messages.first?.content, "Previous message")
     }
 
     func test_messagesOrdered_chronologically() async throws {
@@ -277,12 +308,14 @@ final class ChatViewModelTests: XCTestCase {
 @MainActor
 final class MockAIOrchestrator: AIOrchestratorProtocol {
     var mockResponse: OrchestratorResponse = OrchestratorResponse(content: "Mock response")
+    var mockWelcomeMessage: String? = nil
     var shouldFail: Bool = false
     var failureError: OrchestratorError = .networkError
     var delay: TimeInterval = 0
 
     var processCallCount: Int = 0
     var lastMessage: String?
+    var welcomeCallCount: Int = 0
 
     func processMessage(_ userMessage: String) async throws -> OrchestratorResponse {
         processCallCount += 1
@@ -297,5 +330,10 @@ final class MockAIOrchestrator: AIOrchestratorProtocol {
         }
 
         return mockResponse
+    }
+
+    func generateWelcomeMessage() async throws -> String? {
+        welcomeCallCount += 1
+        return mockWelcomeMessage
     }
 }

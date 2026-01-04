@@ -9,11 +9,11 @@ struct MessageBubble: View {
     }
 
     private var bubbleColor: Color {
-        isUser ? Color.blue : Color(.systemGray6)
+        isUser ? DesignTokens.Colors.warmClay : DesignTokens.Colors.elevatedSurface
     }
 
     private var textColor: Color {
-        isUser ? .white : .primary
+        isUser ? .white : DesignTokens.Colors.textPrimary
     }
 
     var body: some View {
@@ -24,15 +24,22 @@ struct MessageBubble: View {
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 Text(message.content)
+                    .font(DesignTokens.Typography.body)
                     .foregroundColor(textColor)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(bubbleColor)
                     .clipShape(ChatBubbleShape(isUser: isUser))
+                    .shadow(
+                        color: isUser ? Color.clear : DesignTokens.cardShadowColor,
+                        radius: isUser ? 0 : DesignTokens.cardShadowRadius / 2,
+                        x: 0,
+                        y: isUser ? 0 : DesignTokens.cardShadowY / 2
+                    )
 
                 Text(formatTime(message.timestamp))
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textTertiary)
                     .padding(.horizontal, 4)
             }
 

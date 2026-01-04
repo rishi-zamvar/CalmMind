@@ -11,19 +11,17 @@ struct TodoRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Checkbox
-            Button(action: onToggle) {
-                Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundColor(isCompleted ? .green : .gray)
+            // Warm checkbox
+            WarmCheckbox(isChecked: isCompleted) {
+                onToggle()
             }
-            .buttonStyle(.plain)
 
             // Title and metadata
             VStack(alignment: .leading, spacing: 4) {
                 Text(todo.title)
+                    .font(DesignTokens.Typography.body)
                     .strikethrough(isCompleted)
-                    .foregroundColor(isCompleted ? .secondary : .primary)
+                    .foregroundColor(isCompleted ? DesignTokens.Colors.textTertiary : DesignTokens.Colors.textPrimary)
 
                 HStack(spacing: 8) {
                     // Source badge
@@ -33,13 +31,14 @@ struct TodoRow: View {
 
                     // Created date
                     Text(formatDate(todo.createdAt))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(DesignTokens.Typography.meta)
+                        .foregroundColor(DesignTokens.Colors.textTertiary)
                 }
             }
 
             Spacer()
         }
+        .padding(.vertical, 4)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(todo.title), \(isCompleted ? "completed" : "incomplete")")
@@ -53,7 +52,7 @@ struct TodoRow: View {
     }
 }
 
-/// Badge indicating AI-created todo
+/// Badge indicating AI-created todo (warm sage styling)
 struct AIBadge: View {
     var body: some View {
         HStack(spacing: 2) {
@@ -63,10 +62,10 @@ struct AIBadge: View {
                 .font(.caption2)
                 .fontWeight(.medium)
         }
-        .foregroundColor(.purple)
+        .foregroundColor(DesignTokens.Colors.sage)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .background(Color.purple.opacity(0.15))
+        .background(DesignTokens.Colors.sage.opacity(0.15))
         .clipShape(Capsule())
     }
 }

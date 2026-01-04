@@ -60,15 +60,40 @@ final class ChatViewModel {
     // MARK: - Session Management
 
     /// Load or create today's session
+    /// If the session is empty, generate a welcome message
     func loadSession() async {
         do {
             currentSession = try sessionRepository.getOrCreate(for: Date())
             if let session = currentSession {
                 messages = try messageRepository.fetchMessages(for: session)
+
+                // Generate welcome message if session is empty
+                if messages.isEmpty {
+                    await generateWelcomeIfNeeded()
+                }
             }
         } catch {
             errorMessage = "Failed to load session: \(error.localizedDescription)"
             showError = true
+        }
+    }
+
+    /// Generate a welcome message if appropriate
+    private func generateWelcomeIfNeeded() async {
+        guard let session = currentSession else { return }
+
+        do {
+            if let welcome = try await orchestrator.generateWelcomeMessage() {
+                // Save welcome as assistant message
+                let welcomeMessage = ChatMessage(content: welcome, role: .assistant)
+                try messageRepository.save(welcomeMessage, to: session)
+
+                // Reload messages to include the welcome
+                messages = try messageRepository.fetchMessages(for: session)
+            }
+        } catch {
+            // Silently fail - welcome is optional
+            // User can still interact without it
         }
     }
 

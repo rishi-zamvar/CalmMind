@@ -8,66 +8,97 @@ struct JournalListView: View {
     @State private var showingNewEntry: Bool = false
 
     var body: some View {
-        Group {
-            if viewModel.hasEntries {
-                List {
-                    ForEach(viewModel.entriesByMonth, id: \.month) { group in
-                        Section(group.month) {
-                            ForEach(group.entries) { entry in
-                                JournalEntryRow(entry: entry)
-                                    .onTapGesture {
-                                        selectedEntry = entry
-                                    }
+        contentView
+            .ambientBackground()
+            .navigationTitle("Journal")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    newEntryButton
+                }
+            }
+            .sheet(item: $selectedEntry) { entry in
+                NavigationStack {
+                    JournalDetailView(entry: entry, viewModel: viewModel)
+                }
+            }
+            .sheet(isPresented: $showingNewEntry) {
+                NavigationStack {
+                    JournalEditorView(viewModel: viewModel, isPresented: $showingNewEntry)
+                }
+            }
+            .alert("Error", isPresented: $viewModel.showError) {
+                Button("OK") {
+                    viewModel.dismissError()
+                }
+            } message: {
+                Text(viewModel.errorMessage ?? WarmCopy.offlineError)
+            }
+            .task {
+                await viewModel.loadEntries()
+            }
+    }
+
+    @ViewBuilder
+    private var contentView: some View {
+        if viewModel.hasEntries {
+            entriesList
+        } else {
+            emptyState
+        }
+    }
+
+    private var entriesList: some View {
+        List {
+            ForEach(viewModel.entriesByMonth, id: \.month) { group in
+                Section {
+                    ForEach(group.entries) { entry in
+                        JournalEntryRow(entry: entry)
+                            .onTapGesture {
+                                selectedEntry = entry
                             }
-                            .onDelete { indexSet in
-                                Task {
-                                    for index in indexSet {
-                                        await viewModel.deleteEntry(group.entries[index])
-                                    }
-                                }
+                            .listRowBackground(DesignTokens.Colors.elevatedSurface)
+                    }
+                    .onDelete { indexSet in
+                        Task {
+                            for index in indexSet {
+                                await viewModel.deleteEntry(group.entries[index])
                             }
                         }
                     }
-                }
-                .listStyle(.insetGrouped)
-            } else {
-                ContentUnavailableView(
-                    "No Journal Entries",
-                    systemImage: "book.closed",
-                    description: Text("Start writing to reflect on your day")
-                )
-            }
-        }
-        .navigationTitle("Journal")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingNewEntry = true
-                } label: {
-                    Image(systemName: "square.and.pencil")
+                } header: {
+                    sectionHeader(group.month)
                 }
             }
         }
-        .sheet(item: $selectedEntry) { entry in
-            NavigationStack {
-                JournalDetailView(entry: entry, viewModel: viewModel)
-            }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Text(WarmCopy.noJournalEntries)
+                .font(DesignTokens.Typography.body)
+                .foregroundColor(DesignTokens.Colors.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
         }
-        .sheet(isPresented: $showingNewEntry) {
-            NavigationStack {
-                JournalEditorView(viewModel: viewModel, isPresented: $showingNewEntry)
-            }
+    }
+
+    private var newEntryButton: some View {
+        Button {
+            showingNewEntry = true
+        } label: {
+            Image(systemName: "square.and.pencil")
+                .foregroundColor(DesignTokens.Colors.warmClay)
         }
-        .alert("Error", isPresented: $viewModel.showError) {
-            Button("OK") {
-                viewModel.dismissError()
-            }
-        } message: {
-            Text(viewModel.errorMessage ?? "An error occurred")
-        }
-        .task {
-            await viewModel.loadEntries()
-        }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(DesignTokens.Typography.sectionHeader)
+            .foregroundColor(DesignTokens.Colors.textPrimary)
     }
 }
 
@@ -75,11 +106,34 @@ struct JournalListView: View {
 struct JournalEntryRow: View {
     let entry: JournalEntry
 
+    /// Preview text for the row - prefers summary, then synthesized, then events
+    private var previewText: String {
+        if let summary = entry.summary, !summary.isEmpty {
+            return summary
+        }
+        if !entry.fullText.isEmpty {
+            return entry.fullText
+        }
+        // Auto-journaling: show synthesized or first event
+        if let synthesized = entry.synthesizedText, !synthesized.isEmpty {
+            return synthesized
+        }
+        if let firstEvent = entry.includedEvents.first {
+            let eventCount = entry.includedEvents.count
+            if eventCount > 1 {
+                return "\(firstEvent.userText) (+\(eventCount - 1) more)"
+            }
+            return firstEvent.userText
+        }
+        return "Empty entry"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(formatDate(entry.entryDate))
-                    .font(.headline)
+                    .font(DesignTokens.Typography.sectionHeader)
+                    .foregroundColor(DesignTokens.Colors.textPrimary)
 
                 Spacer()
 
@@ -88,9 +142,9 @@ struct JournalEntryRow: View {
                 }
             }
 
-            Text(entry.summary ?? entry.fullText)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+            Text(previewText)
+                .font(DesignTokens.Typography.body)
+                .foregroundColor(DesignTokens.Colors.textSecondary)
                 .lineLimit(2)
         }
         .padding(.vertical, 4)
@@ -103,23 +157,23 @@ struct JournalEntryRow: View {
     }
 }
 
-/// Badge showing mood score
+/// Badge showing mood score (warm color palette)
 struct MoodBadge: View {
     let score: Int
 
     private var moodColor: Color {
         switch score {
-        case 1...3: return .red
-        case 4...6: return .orange
-        case 7...8: return .yellow
-        case 9...10: return .green
-        default: return .gray
+        case 1...3: return DesignTokens.Colors.destructive
+        case 4...6: return DesignTokens.Colors.warmClay
+        case 7...8: return DesignTokens.Colors.duskBlue
+        case 9...10: return DesignTokens.Colors.sage
+        default: return DesignTokens.Colors.textTertiary
         }
     }
 
     var body: some View {
         Text("\(score)")
-            .font(.caption)
+            .font(DesignTokens.Typography.meta)
             .fontWeight(.bold)
             .foregroundColor(.white)
             .frame(width: 24, height: 24)

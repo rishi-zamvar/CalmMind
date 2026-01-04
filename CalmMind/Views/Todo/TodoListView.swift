@@ -5,6 +5,10 @@ import SwiftData
 struct TodoListView: View {
     @Bindable var viewModel: TodoViewModel
     @State private var showCompleted: Bool = false
+    @FocusState private var isAddFieldFocused: Bool
+
+    /// Set to true when navigating from "Add task" CTA
+    var autoFocusAdd: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -12,6 +16,7 @@ struct TodoListView: View {
             AddTodoBar(
                 text: $viewModel.newTodoTitle,
                 canAdd: viewModel.canAdd,
+                isFocused: $isAddFieldFocused,
                 onAdd: {
                     Task {
                         await viewModel.addTodo()
@@ -33,6 +38,7 @@ struct TodoListView: View {
                                     }
                                 }
                             )
+                            .listRowBackground(DesignTokens.Colors.elevatedSurface)
                         }
                         .onDelete { indexSet in
                             Task {
@@ -43,10 +49,12 @@ struct TodoListView: View {
                         }
                     } header: {
                         Text("To Do")
+                            .font(DesignTokens.Typography.sectionHeader)
+                            .foregroundColor(DesignTokens.Colors.textPrimary)
                     }
                 }
 
-                // Completed section
+                // Completed section (collapsed by default)
                 if !viewModel.completedTodos.isEmpty {
                     Section {
                         if showCompleted {
@@ -59,6 +67,7 @@ struct TodoListView: View {
                                         }
                                     }
                                 )
+                                .listRowBackground(DesignTokens.Colors.elevatedSurface)
                             }
                             .onDelete { indexSet in
                                 Task {
@@ -70,42 +79,57 @@ struct TodoListView: View {
                         }
                     } header: {
                         Button {
-                            withAnimation {
+                            withAnimation(DesignTokens.defaultAnimation) {
                                 showCompleted.toggle()
                             }
                         } label: {
                             HStack {
                                 Text("Completed (\(viewModel.completedTodos.count))")
+                                    .font(DesignTokens.Typography.sectionHeader)
                                 Spacer()
                                 Image(systemName: showCompleted ? "chevron.up" : "chevron.down")
+                                    .font(.caption)
                             }
                         }
-                        .foregroundColor(.secondary)
+                        .foregroundColor(DesignTokens.Colors.textSecondary)
                     }
                 }
 
-                // Empty state
+                // Empty state - warm copy
                 if viewModel.incompleteTodos.isEmpty && viewModel.completedTodos.isEmpty {
-                    ContentUnavailableView(
-                        "No Todos",
-                        systemImage: "checkmark.circle",
-                        description: Text("Add a todo to get started")
-                    )
+                    VStack(spacing: 12) {
+                        Text(WarmCopy.emptyTodosTab)
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Colors.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 48)
                     .listRowBackground(Color.clear)
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
         }
+        .ambientBackground()
         .navigationTitle("Todos")
         .alert("Error", isPresented: $viewModel.showError) {
             Button("OK") {
                 viewModel.dismissError()
             }
         } message: {
-            Text(viewModel.errorMessage ?? "An error occurred")
+            Text(viewModel.errorMessage ?? WarmCopy.offlineError)
         }
         .task {
             await viewModel.loadTodos()
+        }
+        .onAppear {
+            if autoFocusAdd {
+                // Delay to ensure view is fully loaded
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isAddFieldFocused = true
+                }
+            }
         }
     }
 }
@@ -114,27 +138,39 @@ struct TodoListView: View {
 struct AddTodoBar: View {
     @Binding var text: String
     let canAdd: Bool
+    var isFocused: FocusState<Bool>.Binding
     let onAdd: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            TextField("Add a todo...", text: $text)
-                .textFieldStyle(.roundedBorder)
+            TextField("Add a gentle task...", text: $text)
+                .font(DesignTokens.Typography.body)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(DesignTokens.Colors.subtleSection)
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.button))
+                .focused(isFocused)
                 .onSubmit {
                     if canAdd {
                         onAdd()
                     }
                 }
 
-            Button(action: onAdd) {
+            Button(action: {
+                DesignTokens.Haptics.softTap()
+                onAdd()
+            }) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(canAdd ? .blue : .gray)
+                    .font(.system(size: 32))
+                    .foregroundColor(canAdd ? DesignTokens.Colors.warmClay : DesignTokens.Colors.textTertiary)
             }
             .disabled(!canAdd)
+            .animation(DesignTokens.defaultAnimation, value: canAdd)
         }
-        .padding()
-        .background(Color(.systemBackground))
+        .padding(.horizontal, DesignTokens.Spacing.screenPad)
+        .padding(.vertical, DesignTokens.Spacing.rowPadV)
+        .background(DesignTokens.Colors.appBackground)
     }
 }
 

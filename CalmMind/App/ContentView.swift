@@ -3,6 +3,9 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @State private var selectedTab: Tab = .home
+    @State private var chatAutoFocus = false
+    @State private var todoAutoFocusAdd = false
 
     // Repositories
     private var sessionRepository: SessionRepository {
@@ -19,27 +22,45 @@ struct ContentView: View {
     }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
+            // Home Tab (default)
+            NavigationStack {
+                HomeView(
+                    todoRepository: todoRepository,
+                    journalRepository: journalRepository
+                )
+            }
+            .tabItem {
+                Label("Home", systemImage: "house")
+            }
+            .tag(Tab.home)
+
             // Chat Tab
             NavigationStack {
                 ChatTabView(
                     sessionRepository: sessionRepository,
                     messageRepository: messageRepository,
                     todoRepository: todoRepository,
-                    journalRepository: journalRepository
+                    journalRepository: journalRepository,
+                    autoFocus: chatAutoFocus
                 )
             }
             .tabItem {
                 Label("Chat", systemImage: "bubble.left.and.bubble.right")
             }
+            .tag(Tab.chat)
 
             // Todos Tab
             NavigationStack {
-                TodoTabView(todoRepository: todoRepository)
+                TodoTabView(
+                    todoRepository: todoRepository,
+                    autoFocusAdd: todoAutoFocusAdd
+                )
             }
             .tabItem {
                 Label("Todos", systemImage: "checklist")
             }
+            .tag(Tab.todos)
 
             // Journal Tab
             NavigationStack {
@@ -48,6 +69,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Journal", systemImage: "book")
             }
+            .tag(Tab.journal)
 
             // Settings Tab
             NavigationStack {
@@ -55,6 +77,27 @@ struct ContentView: View {
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
+            }
+            .tag(Tab.settings)
+        }
+        .tint(DesignTokens.Colors.warmClay)
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
+            if let tab = notification.object as? Tab {
+                selectedTab = tab
+
+                // Reset auto-focus flags
+                chatAutoFocus = false
+                todoAutoFocusAdd = false
+
+                // Check for specific auto-focus flags
+                if let userInfo = notification.userInfo {
+                    if let autoFocus = userInfo["autoFocus"] as? Bool {
+                        chatAutoFocus = autoFocus
+                    }
+                    if let autoFocusAdd = userInfo["autoFocusAdd"] as? Bool {
+                        todoAutoFocusAdd = autoFocusAdd
+                    }
+                }
             }
         }
     }
@@ -64,19 +107,23 @@ struct ContentView: View {
 
 /// Chat tab wrapper that creates ViewModel
 struct ChatTabView: View {
+    @Environment(\.modelContext) private var modelContext
+
     let sessionRepository: SessionRepository
     let messageRepository: MessageRepository
     let todoRepository: TodoRepository
     let journalRepository: JournalRepository
+    var autoFocus: Bool = false
 
     @State private var viewModel: ChatViewModel?
 
     var body: some View {
         Group {
             if let viewModel = viewModel {
-                ChatView(viewModel: viewModel)
+                ChatView(viewModel: viewModel, autoFocus: autoFocus)
             } else {
                 ProgressView("Loading...")
+                    .tint(DesignTokens.Colors.warmClay)
                     .onAppear {
                         // Create orchestrator with all required dependencies
                         let orchestrator = createOrchestrator()
@@ -106,6 +153,11 @@ struct ChatTabView: View {
             todoTools: todoTools
         )
 
+        // Create journal persistence for auto-journaling
+        let journalPersistence = JournalPersistenceActor(
+            modelContainer: modelContext.container
+        )
+
         return AIOrchestrator(
             openAIService: OpenAIService(),
             contextManager: ContextManager(),
@@ -116,7 +168,8 @@ struct ChatTabView: View {
             messageRepository: messageRepository,
             sessionRepository: sessionRepository,
             todoRepository: todoRepository,
-            journalRepository: journalRepository
+            journalRepository: journalRepository,
+            journalPersistence: journalPersistence
         )
     }
 }
@@ -124,13 +177,14 @@ struct ChatTabView: View {
 /// Todos tab wrapper that creates ViewModel
 struct TodoTabView: View {
     let todoRepository: TodoRepository
+    var autoFocusAdd: Bool = false
 
     @State private var viewModel: TodoViewModel?
 
     var body: some View {
         Group {
             if let viewModel = viewModel {
-                TodoListView(viewModel: viewModel)
+                TodoListView(viewModel: viewModel, autoFocusAdd: autoFocusAdd)
             } else {
                 ProgressView("Loading...")
                     .onAppear {

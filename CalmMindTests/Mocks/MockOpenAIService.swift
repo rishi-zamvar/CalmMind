@@ -57,19 +57,24 @@ final class MockOpenAIService: OpenAIServiceProtocol, @unchecked Sendable {
     /// MaxTokens from the last call
     private(set) var lastMaxTokens: Int?
 
+    /// Temperature from the last call
+    private(set) var lastTemperature: Double?
+
     // MARK: - OpenAIServiceProtocol
 
     func sendChatCompletion(
         messages: [OpenAIMessage],
         tools: [OpenAIToolDefinition]?,
         model: String,
-        maxTokens: Int?
+        maxTokens: Int?,
+        temperature: Double?
     ) async throws -> ChatCompletionResponse {
         sendCallCount += 1
         lastMessages = messages
         lastTools = tools
         lastModel = model
         lastMaxTokens = maxTokens
+        lastTemperature = temperature
 
         if delaySeconds > 0 {
             try await Task.sleep(for: .seconds(delaySeconds))
@@ -134,6 +139,7 @@ final class MockOpenAIService: OpenAIServiceProtocol, @unchecked Sendable {
         lastTools = nil
         lastModel = nil
         lastMaxTokens = nil
+        lastTemperature = nil
         shouldFail = false
         mockResponseContent = "I understand how you feel."
         mockToolCalls = nil

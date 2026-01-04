@@ -7,6 +7,19 @@ enum TodoSource: String, Codable {
     case ai     // Extracted by AI from conversation
 }
 
+/// Priority level for a todo item
+/// Explicit ordering (not relying on raw values)
+enum TodoPriority: Int, Codable, Comparable, CaseIterable {
+    case none = 0
+    case low = 1
+    case medium = 2
+    case high = 3
+
+    static func < (lhs: TodoPriority, rhs: TodoPriority) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
 /// A todo/task item
 @Model
 final class TodoItem {
@@ -35,7 +48,15 @@ final class TodoItem {
     /// Source of the todo (user-created or AI-extracted)
     var sourceRaw: String
 
+    /// Priority level (stored as raw value)
+    var priorityRaw: Int
+
     // MARK: - Computed Properties
+
+    var priority: TodoPriority {
+        get { TodoPriority(rawValue: priorityRaw) ?? .none }
+        set { priorityRaw = newValue.rawValue }
+    }
 
     var source: TodoSource {
         get { TodoSource(rawValue: sourceRaw) ?? .user }
@@ -49,7 +70,8 @@ final class TodoItem {
         title: String,
         isCompleted: Bool = false,
         dueDate: Date? = nil,
-        source: TodoSource = .user
+        source: TodoSource = .user,
+        priority: TodoPriority = .none
     ) {
         self.id = id
         self.title = title
@@ -58,6 +80,7 @@ final class TodoItem {
         self.completedAt = nil
         self.dueDate = dueDate
         self.sourceRaw = source.rawValue
+        self.priorityRaw = priority.rawValue
     }
 
     // MARK: - Actions

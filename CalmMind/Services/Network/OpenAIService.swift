@@ -35,7 +35,8 @@ final class OpenAIService: OpenAIServiceProtocol, Sendable {
         messages: [OpenAIMessage],
         tools: [OpenAIToolDefinition]?,
         model: String,
-        maxTokens: Int?
+        maxTokens: Int?,
+        temperature: Double? = nil
     ) async throws -> ChatCompletionResponse {
         // Check API key
         guard let apiKey = secretsStore.getAPIKey() else {
@@ -56,7 +57,8 @@ final class OpenAIService: OpenAIServiceProtocol, Sendable {
             tools: tools,
             model: model,
             maxTokens: maxTokens,
-            stream: false
+            stream: false,
+            temperature: temperature ?? 0.7
         )
 
         // Execute with retries
@@ -177,7 +179,8 @@ final class OpenAIService: OpenAIServiceProtocol, Sendable {
         tools: [OpenAIToolDefinition]?,
         model: String,
         maxTokens: Int?,
-        stream: Bool
+        stream: Bool,
+        temperature: Double = 0.7
     ) throws -> URLRequest {
         guard let url = URL(string: Self.baseURL + Self.chatCompletionsPath) else {
             throw OpenAIError.invalidURL
@@ -194,7 +197,7 @@ final class OpenAIService: OpenAIServiceProtocol, Sendable {
             tools: tools,
             stream: stream,
             maxTokens: maxTokens,
-            temperature: 0.7
+            temperature: temperature
         )
 
         do {

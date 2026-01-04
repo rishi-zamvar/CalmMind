@@ -4,13 +4,16 @@ import SwiftData
 /// Main chat interface view
 struct ChatView: View {
     @Bindable var viewModel: ChatViewModel
+    var autoFocus: Bool = false
+
+    @FocusState private var inputFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             // Messages list
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: 16) {  // Increased from 12 to 16
                         ForEach(viewModel.messages) { message in
                             MessageBubble(message: message)
                                 .id(message.id)
@@ -26,20 +29,19 @@ struct ChatView: View {
                 }
                 .onChange(of: viewModel.messages.count) { _, _ in
                     if let lastId = viewModel.lastMessageId {
-                        withAnimation {
+                        withAnimation(DesignTokens.defaultAnimation) {
                             proxy.scrollTo(lastId, anchor: .bottom)
                         }
                     }
                 }
             }
 
-            Divider()
-
-            // Input bar
+            // Input bar (no Divider - use spacing instead)
             ChatInputBar(
                 text: $viewModel.inputText,
                 isLoading: viewModel.isLoading,
                 canSend: viewModel.canSend,
+                isFocused: $inputFocused,
                 onSend: {
                     Task {
                         await viewModel.sendMessage()
@@ -47,6 +49,7 @@ struct ChatView: View {
                 }
             )
         }
+        .ambientBackground()
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Error", isPresented: $viewModel.showError) {
@@ -54,10 +57,18 @@ struct ChatView: View {
                 viewModel.dismissError()
             }
         } message: {
-            Text(viewModel.errorMessage ?? "An error occurred")
+            Text(viewModel.errorMessage ?? WarmCopy.offlineError)
         }
         .task {
             await viewModel.loadSession()
+        }
+        .onAppear {
+            // Auto-focus when coming from Home prompt card
+            if autoFocus {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    inputFocused = true
+                }
+            }
         }
     }
 }
@@ -69,17 +80,18 @@ struct TypingIndicator: View {
     var body: some View {
         HStack(alignment: .bottom) {
             HStack(spacing: 4) {
-                ForEach(0..<3) { index in
+                ForEach(0..<3, id: \.self) { index in
                     Circle()
-                        .fill(Color.gray.opacity(0.5))
+                        .fill(DesignTokens.Colors.textTertiary)
                         .frame(width: 8, height: 8)
                         .offset(y: animationOffset(for: index))
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color(.systemGray6))
+            .background(DesignTokens.Colors.elevatedSurface)
             .clipShape(RoundedRectangle(cornerRadius: 16))
+            .cardShadow()
 
             Spacer()
         }

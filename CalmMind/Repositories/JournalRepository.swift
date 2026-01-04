@@ -20,6 +20,28 @@ final class JournalRepository {
         return entry
     }
 
+    /// Creates a new journal entry with simplified parameters
+    @discardableResult
+    func createEntry(date: Date, text: String) -> JournalEntry? {
+        let entry = JournalEntry(fullText: text, date: date)
+        context.insert(entry)
+        do {
+            try context.save()
+            return entry
+        } catch {
+            return nil
+        }
+    }
+
+    /// Gets or creates today's journal entry
+    func createOrFetchToday() -> JournalEntry? {
+        let today = Calendar.current.startOfDay(for: Date())
+        if let existing = fetchEntry(for: today) {
+            return existing
+        }
+        return createEntry(date: today, text: "")
+    }
+
     // MARK: - Update
 
     /// Updates an existing entry's full text
@@ -50,13 +72,18 @@ final class JournalRepository {
         return try context.fetch(descriptor)
     }
 
-    /// Fetches an entry for a specific date
-    func fetchEntry(for date: Date) throws -> JournalEntry? {
+    /// Fetches an entry for a specific date (throwing)
+    func fetchEntryThrowing(for date: Date) throws -> JournalEntry? {
         let dateKey = JournalEntry.formatDateKey(date)
         let descriptor = FetchDescriptor<JournalEntry>(
             predicate: #Predicate { $0.dateKey == dateKey }
         )
         return try context.fetch(descriptor).first
+    }
+
+    /// Fetches an entry for a specific date (non-throwing)
+    func fetchEntry(for date: Date) -> JournalEntry? {
+        try? fetchEntryThrowing(for: date)
     }
 
     /// Fetches entries that don't have a summary yet
