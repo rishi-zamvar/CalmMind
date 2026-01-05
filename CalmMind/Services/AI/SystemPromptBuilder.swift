@@ -16,6 +16,8 @@ enum SystemPromptBuilder {
     ///   - todaysJournal: Summary or excerpt from today's journal (nil if none)
     ///   - memories: Relevant memories from past conversations
     ///   - currentDate: The current date (injected for testability)
+    ///   - weatherContext: Discretionary weather context (nil if not relevant)
+    ///   - semanticContext: Relevant semantic search results (nil if not enabled)
     /// - Returns: The complete system prompt string
     static func build(
         userName: String?,
@@ -23,7 +25,9 @@ enum SystemPromptBuilder {
         recentTodos: [String],
         todaysJournal: String?,
         memories: [String],
-        currentDate: Date
+        currentDate: Date,
+        weatherContext: String? = nil,
+        semanticContext: String? = nil
     ) -> String {
         let name = userName?.trimmingCharacters(in: .whitespaces).isEmpty == false
             ? userName!.trimmingCharacters(in: .whitespaces)
@@ -113,7 +117,9 @@ enum SystemPromptBuilder {
         let contextSection = buildContextSection(
             recentTodos: recentTodos,
             todaysJournal: todaysJournal,
-            memories: memories
+            memories: memories,
+            weatherContext: weatherContext,
+            semanticContext: semanticContext
         )
 
         if !contextSection.isEmpty {
@@ -137,11 +143,13 @@ enum SystemPromptBuilder {
         return formatter.string(from: date)
     }
 
-    /// Build the context section from todos, journal, and memories
+    /// Build the context section from todos, journal, memories, weather, and semantic context
     private static func buildContextSection(
         recentTodos: [String],
         todaysJournal: String?,
-        memories: [String]
+        memories: [String],
+        weatherContext: String?,
+        semanticContext: String?
     ) -> String {
         var sections: [String] = []
 
@@ -170,6 +178,16 @@ enum SystemPromptBuilder {
                 memorySection += "\n- \(memory)"
             }
             sections.append(memorySection)
+        }
+
+        // Weather context (discretionary - only when relevant)
+        if let weather = weatherContext, !weather.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            sections.append(weather)
+        }
+
+        // Semantic search context (auto-enabled when threshold met)
+        if let semantic = semanticContext, !semantic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            sections.append(semantic)
         }
 
         return sections.joined(separator: "\n\n")
