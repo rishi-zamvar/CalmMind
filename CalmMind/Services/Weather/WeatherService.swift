@@ -26,6 +26,7 @@ extension URLSession: WeatherURLSessionProtocol {}
 enum WeatherError: Error, Equatable {
     case networkError(String)
     case invalidAPIKey
+    case missingAPIKey  // Explicit: API key not configured
     case locationUnavailable
     // NOTE: No privacyModeEnabled - privacy returns nil instead
 }
@@ -47,7 +48,11 @@ final class WeatherService: WeatherServiceProtocol, @unchecked Sendable {
     private let defaults: UserDefaults
     private let userPreferences: UserPreferences
     private let config: WeatherConfig
-    private let apiKey: String
+    private let _apiKey: String?
+
+    /// Whether this service has a valid API key configured
+    /// Used by ServiceContainer to determine weatherAPIStatus
+    var apiKey: String? { _apiKey }
 
     // MARK: - Initialization
 
@@ -56,18 +61,24 @@ final class WeatherService: WeatherServiceProtocol, @unchecked Sendable {
         defaults: UserDefaults = .standard,
         userPreferences: UserPreferences = .shared,
         config: WeatherConfig = .shared,
-        apiKey: String
+        apiKey: String?  // nil = service disabled, not ""
     ) {
         self.urlSession = urlSession
         self.defaults = defaults
         self.userPreferences = userPreferences
         self.config = config
-        self.apiKey = apiKey
+        // Treat empty string as nil (explicit unavailable state)
+        self._apiKey = apiKey?.isEmpty == true ? nil : apiKey
     }
 
     // MARK: - WeatherServiceProtocol
 
     func fetchWeather(for coordinate: CLLocationCoordinate2D) async throws -> Weather {
+        // Explicit check for missing API key - fail fast
+        guard let key = _apiKey else {
+            throw WeatherError.missingAPIKey
+        }
+
         // Check cache first
         if !shouldRefreshWeather() {
             if let cached = getCachedWeather() {
@@ -76,7 +87,7 @@ final class WeatherService: WeatherServiceProtocol, @unchecked Sendable {
         }
 
         // Fetch fresh weather
-        let url = config.buildURL(lat: coordinate.latitude, lon: coordinate.longitude, apiKey: apiKey)
+        let url = config.buildURL(lat: coordinate.latitude, lon: coordinate.longitude, apiKey: key)
 
         do {
             let (data, response) = try await urlSession.data(from: url)

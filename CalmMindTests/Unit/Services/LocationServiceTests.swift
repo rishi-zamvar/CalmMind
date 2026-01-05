@@ -204,7 +204,111 @@ final class LocationServiceTests: XCTestCase {
         XCTAssertEqual(LocationService.CacheKeys.lastLocationLat, "location_cache_lat")
         XCTAssertEqual(LocationService.CacheKeys.lastLocationLon, "location_cache_lon")
         XCTAssertEqual(LocationService.CacheKeys.lastLocationAt, "location_cache_at")
-        XCTAssertEqual(LocationService.CacheKeys.hasRequestedAuthorization, "location_auth_requested")
+    }
+
+    // MARK: - Permission State
+
+    func test_permissionState_notDetermined() {
+        mockLocationManager.mockAuthorizationStatus = .notDetermined
+
+        XCTAssertEqual(locationService.permissionState, .notDetermined)
+    }
+
+    func test_permissionState_authorized() {
+        mockLocationManager.mockAuthorizationStatus = .authorizedWhenInUse
+
+        XCTAssertEqual(locationService.permissionState, .authorized)
+    }
+
+    func test_permissionState_denied() {
+        mockLocationManager.mockAuthorizationStatus = .denied
+
+        XCTAssertEqual(locationService.permissionState, .denied)
+    }
+
+    func test_permissionState_privacyMode_blocksEvenWhenAuthorized() {
+        let userPrefs = UserPreferences(defaults: UserDefaults(suiteName: "test.\(UUID())")!)
+        userPrefs.privacyModeEnabled = true
+
+        let service = LocationService(
+            locationManager: mockLocationManager,
+            defaults: mockDefaults,
+            config: config,
+            userPreferences: userPrefs
+        )
+
+        mockLocationManager.mockAuthorizationStatus = .authorizedWhenInUse
+
+        XCTAssertEqual(service.permissionState, .privacyMode)
+    }
+
+    // MARK: - Request Permission If Needed
+
+    func test_requestPermissionIfNeeded_returnsTrue_whenNotDetermined() async {
+        mockLocationManager.mockAuthorizationStatus = .notDetermined
+
+        let result = await locationService.requestPermissionIfNeeded()
+
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockLocationManager.requestWhenInUseAuthorizationCalled)
+    }
+
+    func test_requestPermissionIfNeeded_returnsFalse_whenAlreadyAuthorized() async {
+        mockLocationManager.mockAuthorizationStatus = .authorizedWhenInUse
+
+        let result = await locationService.requestPermissionIfNeeded()
+
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockLocationManager.requestWhenInUseAuthorizationCalled)
+    }
+
+    func test_requestPermissionIfNeeded_returnsFalse_whenDenied() async {
+        mockLocationManager.mockAuthorizationStatus = .denied
+
+        let result = await locationService.requestPermissionIfNeeded()
+
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockLocationManager.requestWhenInUseAuthorizationCalled)
+    }
+
+    func test_requestPermissionIfNeeded_returnsFalse_whenPrivacyMode() async {
+        let userPrefs = UserPreferences(defaults: UserDefaults(suiteName: "test.\(UUID())")!)
+        userPrefs.privacyModeEnabled = true
+
+        let service = LocationService(
+            locationManager: mockLocationManager,
+            defaults: mockDefaults,
+            config: config,
+            userPreferences: userPrefs
+        )
+
+        mockLocationManager.mockAuthorizationStatus = .notDetermined
+
+        let result = await service.requestPermissionIfNeeded()
+
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockLocationManager.requestWhenInUseAuthorizationCalled)
+    }
+
+    // MARK: - Privacy Mode Blocks Location Access
+
+    func test_getLocationThrottled_privacyMode_returnsNil() async {
+        let userPrefs = UserPreferences(defaults: UserDefaults(suiteName: "test.\(UUID())")!)
+        userPrefs.privacyModeEnabled = true
+
+        let service = LocationService(
+            locationManager: mockLocationManager,
+            defaults: mockDefaults,
+            config: config,
+            userPreferences: userPrefs
+        )
+
+        mockLocationManager.mockAuthorizationStatus = .authorizedWhenInUse
+        mockLocationManager.mockLocation = CLLocation(latitude: 37.7749, longitude: -122.4194)
+
+        let coordinate = await service.getLocationThrottled()
+
+        XCTAssertNil(coordinate)
     }
 }
 

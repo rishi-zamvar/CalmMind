@@ -29,6 +29,7 @@ final class UserPreferences {
         static let autoCreateTodos = "autoCreateTodos"
         static let autoJournalingEnabled = "autoJournalingEnabled"
         static let installedVersion = "installedBuildVersion"
+        static let weatherEnabled = "weatherEnabled"
     }
 
     // MARK: - Properties
@@ -50,7 +51,8 @@ final class UserPreferences {
             Keys.notificationPrivacyMode: NotificationPrivacyMode.detailed.rawValue,
             Keys.hasCompletedOnboarding: false,
             Keys.hasCompletedOnboardingV2: false,
-            Keys.autoCreateTodos: true
+            Keys.autoCreateTodos: true,
+            Keys.weatherEnabled: true
         ])
     }
 
@@ -141,6 +143,19 @@ final class UserPreferences {
         set { defaults.set(newValue, forKey: Keys.autoJournalingEnabled) }
     }
 
+    /// Whether weather feature is enabled
+    /// Defaults to true (opt-out, not opt-in)
+    var weatherEnabled: Bool {
+        get {
+            // If key doesn't exist, return true (default enabled)
+            if defaults.object(forKey: Keys.weatherEnabled) == nil {
+                return true
+            }
+            return defaults.bool(forKey: Keys.weatherEnabled)
+        }
+        set { defaults.set(newValue, forKey: Keys.weatherEnabled) }
+    }
+
     // MARK: - Version Tracking
 
     /// Stamp the installed version on first launch (for migrations)
@@ -197,7 +212,8 @@ final class UserPreferences {
             Keys.lastNudgeEveningAt,
             Keys.userName,
             Keys.autoCreateTodos,
-            Keys.autoJournalingEnabled
+            Keys.autoJournalingEnabled,
+            Keys.weatherEnabled
             // Note: deviceSalt and installedVersion are intentionally NOT reset
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }

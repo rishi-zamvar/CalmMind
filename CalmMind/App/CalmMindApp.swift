@@ -5,14 +5,17 @@ import SwiftData
 struct CalmMindApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
-    var sharedModelContainer: ModelContainer = {
+    // ModelContainer MUST be static for stored property initializer to reference it
+    static let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             ChatMessage.self,
             DailySession.self,
             JournalEntry.self,
             JournalEvent.self,
             TodoItem.self,
-            MemoryItem.self
+            MemoryItem.self,
+            Topic.self,
+            Fact.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -43,26 +46,21 @@ struct CalmMindApp: App {
         }
     }()
 
-    /// Journal synthesizer for end-of-day narrative generation
-    private var journalSynthesizer: JournalSynthesizer?
+    // SINGLE source of truth for all services
+    @StateObject private var services = ServiceContainer(
+        modelContainer: CalmMindApp.sharedModelContainer
+    )
 
-    init() {
-        // Initialize journal synthesizer with dependencies
-        let persistence = JournalPersistenceActor(modelContainer: sharedModelContainer)
-        let openAIService = OpenAIService()
-        let journalGenerator = JournalGenerator(openAIService: openAIService)
-        journalSynthesizer = JournalSynthesizer(
-            journalPersistence: persistence,
-            journalGenerator: journalGenerator
-        )
-    }
+    /// Journal synthesizer for end-of-day narrative generation
+    @State private var journalSynthesizer: JournalSynthesizer?
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(services)
                 .tint(DesignTokens.Colors.warmClay)
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(CalmMindApp.sharedModelContainer)
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 // Trigger journal synthesis check (throttled internally)
@@ -71,5 +69,20 @@ struct CalmMindApp: App {
                 }
             }
         }
+    }
+
+    init() {
+        // JournalSynthesizer needs to be created after services exists
+        // Use a static to avoid issues with stored property initialization order
+        let container = CalmMindApp.sharedModelContainer
+        let persistence = JournalPersistenceActor(modelContainer: container)
+        let openAIService = OpenAIService()
+        let journalGenerator = JournalGenerator(openAIService: openAIService)
+
+        // Create synthesizer - services will be passed when available
+        _journalSynthesizer = State(initialValue: JournalSynthesizer(
+            journalPersistence: persistence,
+            journalGenerator: journalGenerator
+        ))
     }
 }

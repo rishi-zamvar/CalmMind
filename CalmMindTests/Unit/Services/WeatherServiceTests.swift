@@ -243,6 +243,66 @@ final class WeatherServiceTests: XCTestCase {
         XCTAssertEqual(WeatherService.CacheKeys.lastWeatherAt, "weather_cache_at")
     }
 
+    // MARK: - Missing API Key
+
+    func test_fetchWeather_nilAPIKey_throwsMissingAPIKey() async {
+        let serviceWithNilKey = WeatherService(
+            urlSession: mockURLSession,
+            defaults: mockDefaults,
+            userPreferences: mockUserPreferences,
+            config: config,
+            apiKey: nil
+        )
+
+        let coordinate = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
+
+        do {
+            _ = try await serviceWithNilKey.fetchWeather(for: coordinate)
+            XCTFail("Expected missingAPIKey error")
+        } catch {
+            XCTAssertEqual(error as? WeatherError, .missingAPIKey)
+        }
+    }
+
+    func test_fetchWeather_emptyAPIKey_throwsMissingAPIKey() async {
+        let serviceWithEmptyKey = WeatherService(
+            urlSession: mockURLSession,
+            defaults: mockDefaults,
+            userPreferences: mockUserPreferences,
+            config: config,
+            apiKey: ""  // Empty string should be treated as nil
+        )
+
+        let coordinate = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
+
+        do {
+            _ = try await serviceWithEmptyKey.fetchWeather(for: coordinate)
+            XCTFail("Expected missingAPIKey error")
+        } catch {
+            XCTAssertEqual(error as? WeatherError, .missingAPIKey)
+        }
+    }
+
+    func test_apiKeyProperty_exposedForStatusChecking() {
+        let serviceWithKey = WeatherService(
+            urlSession: mockURLSession,
+            defaults: mockDefaults,
+            userPreferences: mockUserPreferences,
+            config: config,
+            apiKey: "test-key"
+        )
+        XCTAssertEqual(serviceWithKey.apiKey, "test-key")
+
+        let serviceWithNilKey = WeatherService(
+            urlSession: mockURLSession,
+            defaults: mockDefaults,
+            userPreferences: mockUserPreferences,
+            config: config,
+            apiKey: nil
+        )
+        XCTAssertNil(serviceWithNilKey.apiKey)
+    }
+
     // MARK: - URL Building
 
     func test_fetchWeather_usesConfigURL() async throws {

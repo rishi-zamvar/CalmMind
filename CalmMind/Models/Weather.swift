@@ -25,12 +25,13 @@ struct Weather: Codable, Sendable, Equatable {
     // MARK: - Temperature Classification (Config-Driven)
 
     /// Check if weather is extreme (uses config thresholds)
+    /// BOUNDARY: <= extremeColdThreshold OR >= extremeHeatThreshold
     /// - Parameter config: Weather configuration for thresholds
     /// - Returns: true if condition is extreme OR temperature outside thresholds
     func isExtreme(config: WeatherConfig = .shared) -> Bool {
         condition.isExtreme ||
-        temperature < config.extremeColdThreshold ||
-        temperature > config.extremeHeatThreshold
+        temperature <= config.extremeColdThreshold ||
+        temperature >= config.extremeHeatThreshold
     }
 
     /// Check if weather is pleasant (uses config thresholds)
@@ -40,6 +41,28 @@ struct Weather: Codable, Sendable, Equatable {
         condition.isPleasant &&
         temperature >= config.pleasantTempMin &&
         temperature <= config.pleasantTempMax
+    }
+
+    /// Check if weather is mildly uncomfortable (worth mentioning but not extreme)
+    /// BOUNDARY: Non-overlapping with isExtreme - see partition table:
+    /// | temp <= 32      | Extreme cold (NOT mild)
+    /// | 32 < temp < 45  | Mild cold (chilly)
+    /// | 45 <= temp < 85 | Comfortable (NOT mild)
+    /// | 85 <= temp < 95 | Mild hot (warm)
+    /// | temp >= 95      | Extreme hot (NOT mild)
+    /// - Parameter config: Weather configuration for thresholds
+    /// - Returns: true if temperature is in chilly or warm range (but not extreme)
+    func isMildlyUncomfortable(config: WeatherConfig = .shared) -> Bool {
+        // Chilly range: strictly above extreme cold, strictly below mild cold threshold
+        let isChilly = temperature > config.extremeColdThreshold && temperature < config.mildColdThreshold
+        // Warm range: at or above mild heat threshold, strictly below extreme heat
+        let isWarm = temperature >= config.mildHeatThreshold && temperature < config.extremeHeatThreshold
+        return isChilly || isWarm
+    }
+
+    /// Formatted temperature with units (for accessibility)
+    var formattedTemperature: String {
+        "\(Int(temperature)) degrees Fahrenheit"
     }
 
     // MARK: - Display Formatting

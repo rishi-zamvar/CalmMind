@@ -5,14 +5,20 @@ import SwiftData
 /// Exactly 3 blocks, always visible without scrolling on iPhone 13/14/15 Pro
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var services: ServiceContainer
 
     let todoRepository: TodoRepository
     let journalRepository: JournalRepository
 
+    // Weather - created once from services
+    @State private var weatherViewModel: WeatherViewModel?
+
+    // Journal synthesis - created once from services
+    @State private var journalSynthesizer: JournalSynthesizer?
+
     // Navigation state
     @State private var selectedTab: Tab = .home
-    @State private var showingJournalDetail = false
-    @State private var todayJournalEntry: JournalEntry?
+    @State private var journalEntryToShow: JournalEntry?
     @State private var navigateToChat = false
     @State private var chatAutoFocus = false
 
@@ -24,6 +30,11 @@ struct HomeView: View {
             VStack(spacing: DesignTokens.Spacing.sectionGap) {
                 // 1. Date & Time anchor
                 DateTimeHeader(onTap: openTodayJournal)
+
+                // Weather card - hidden in privacy mode (handled by WeatherViewModel)
+                if let vm = weatherViewModel {
+                    WeatherCard(viewModel: vm)
+                }
 
                 // 2. Today's Focus (top 3 todos)
                 PriorityTodosCard(
@@ -46,16 +57,41 @@ struct HomeView: View {
         .navigationTitle("")
         .navigationBarHidden(true)
         .task {
-            await loadTodos()
+            // Create weather view model once on first appear
+            if weatherViewModel == nil {
+                weatherViewModel = WeatherViewModel(
+                    locationService: services.locationService,
+                    weatherService: services.weatherService,
+                    userPreferences: services.userPreferences
+                )
+            }
+            // Create journal synthesizer once on first appear
+            if journalSynthesizer == nil {
+                let journalPersistence = JournalPersistenceActor(
+                    modelContainer: modelContext.container
+                )
+                let journalGenerator = JournalGenerator(openAIService: OpenAIService())
+                journalSynthesizer = JournalSynthesizer(
+                    journalPersistence: journalPersistence,
+                    journalGenerator: journalGenerator,
+                    services: services
+                )
+            }
+            // Load data in parallel
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { await loadTodos() }
+                group.addTask { await weatherViewModel?.loadWeather() }
+            }
         }
-        .sheet(isPresented: $showingJournalDetail) {
-            if let entry = todayJournalEntry {
-                NavigationStack {
-                    JournalDetailView(
-                        entry: entry,
-                        viewModel: JournalViewModel(journalRepository: journalRepository)
+        .sheet(item: $journalEntryToShow) { entry in
+            NavigationStack {
+                JournalDetailView(
+                    entry: entry,
+                    viewModel: JournalViewModel(
+                        journalRepository: journalRepository,
+                        journalSynthesizer: journalSynthesizer
                     )
-                }
+                )
             }
         }
     }
@@ -65,19 +101,17 @@ struct HomeView: View {
     private func openTodayJournal() {
         DesignTokens.Haptics.softTap()
 
-        // Get or create today's entry
-        let today = Calendar.current.startOfDay(for: Date())
+        // Get or create today's entry - use service's timezone-aware calendar
+        let today = services.startOfDay(for: Date())
 
         if let existing = journalRepository.fetchEntry(for: today) {
-            todayJournalEntry = existing
+            journalEntryToShow = existing
         } else {
             // Create new entry and open in edit mode
             if let newEntry = journalRepository.createEntry(date: today, text: "") {
-                todayJournalEntry = newEntry
+                journalEntryToShow = newEntry
             }
         }
-
-        showingJournalDetail = true
     }
 
     private func completeTodo(_ todo: TodoItem) {
@@ -142,6 +176,7 @@ enum Tab: Int, CaseIterable {
 
 extension Notification.Name {
     static let navigateToTab = Notification.Name("navigateToTab")
+    static let locationAuthorizationDidChange = Notification.Name("locationAuthorizationDidChange")
 }
 
 #Preview {

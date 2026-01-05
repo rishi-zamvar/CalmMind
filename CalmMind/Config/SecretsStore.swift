@@ -16,6 +16,20 @@ protocol SecretsStore {
 
     /// Check if an API key is stored
     var hasAPIKey: Bool { get }
+
+    // MARK: - Weather API Key
+
+    /// Save the OpenWeatherMap API key
+    func saveWeatherAPIKey(_ key: String) throws
+
+    /// Retrieve the stored weather API key, or nil if not set
+    func getWeatherAPIKey() -> String?
+
+    /// Delete the stored weather API key
+    func deleteWeatherAPIKey()
+
+    /// Check if a weather API key is stored
+    var hasWeatherAPIKey: Bool { get }
 }
 
 // MARK: - Errors
@@ -64,6 +78,7 @@ final class KeychainSecretsStore: SecretsStore {
 
     private let service: String
     private let apiKeyAccount = "openai-api-key"
+    private let weatherAPIKeyAccount = "openweathermap-api-key"
 
     /// PRODUCTION: Available after first unlock, not synced to iCloud
     private let accessibility = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
@@ -193,6 +208,124 @@ final class KeychainSecretsStore: SecretsStore {
 
     var hasAPIKey: Bool {
         getAPIKey() != nil
+    }
+
+    // MARK: - Weather API Key
+
+    func saveWeatherAPIKey(_ key: String) throws {
+        guard !key.isEmpty else {
+            throw SecretsStoreError.emptyKey
+        }
+
+        guard let data = key.data(using: .utf8) else {
+            throw SecretsStoreError.unexpectedData
+        }
+
+        // Delete existing key first (if any)
+        deleteWeatherAPIKey()
+
+        // Add new key with production security settings
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: weatherAPIKeyAccount,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: accessibility,
+            kSecAttrSynchronizable as String: kCFBooleanFalse!  // NO iCloud sync
+        ]
+
+        let status = SecItemAdd(query as CFDictionary, nil)
+
+        // Handle specific error cases
+        if status == errSecNotAvailable || status == errSecInteractionNotAllowed {
+            throw SecretsStoreError.deviceLocked
+        }
+
+        guard status == errSecSuccess else {
+            throw SecretsStoreError.keychainError(status)
+        }
+    }
+
+    func getWeatherAPIKey() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: weatherAPIKeyAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        // Handle device locked case gracefully
+        if status == errSecNotAvailable || status == errSecInteractionNotAllowed {
+            return nil
+        }
+
+        if status == errSecSuccess,
+           let data = result as? Data,
+           let key = String(data: data, encoding: .utf8) {
+            return key
+        }
+
+        // DEBUG fallback: Try xcconfig file for development testing
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            return readWeatherAPIKeyFromXCConfig()
+        }
+        #endif
+        return nil
+    }
+
+    #if DEBUG
+    private func readWeatherAPIKeyFromXCConfig() -> String? {
+        // Try Bundle main path first
+        if let bundleKey = Bundle.main.object(forInfoDictionaryKey: "OPENWEATHERMAP_API_KEY") as? String,
+           !bundleKey.isEmpty,
+           !bundleKey.hasPrefix("$(") {
+            return bundleKey
+        }
+
+        // Try reading directly from xcconfig file
+        let projectPath = "/Users/rishizamvar/Desktop/CalmMind/Config/Secrets.xcconfig"
+        return parseWeatherKeyFromXCConfig(at: projectPath)
+    }
+
+    private func parseWeatherKeyFromXCConfig(at path: String) -> String? {
+        guard FileManager.default.fileExists(atPath: path),
+              let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
+            return nil
+        }
+
+        for line in contents.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("OPENWEATHERMAP_API_KEY") {
+                let parts = trimmed.components(separatedBy: "=")
+                if parts.count >= 2 {
+                    let value = parts[1].trimmingCharacters(in: .whitespaces)
+                    if !value.isEmpty && value != "your-openweathermap-key-here" {
+                        return value
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    #endif
+
+    func deleteWeatherAPIKey() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: weatherAPIKeyAccount
+        ]
+
+        SecItemDelete(query as CFDictionary)
+    }
+
+    var hasWeatherAPIKey: Bool {
+        getWeatherAPIKey() != nil
     }
 
     // MARK: - Migration

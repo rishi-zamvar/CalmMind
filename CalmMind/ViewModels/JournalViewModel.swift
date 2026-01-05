@@ -59,11 +59,13 @@ final class JournalViewModel {
     // MARK: - Dependencies
 
     private let journalRepository: JournalRepository
+    private let journalSynthesizer: JournalSynthesizer?
 
     // MARK: - Initialization
 
-    init(journalRepository: JournalRepository) {
+    init(journalRepository: JournalRepository, journalSynthesizer: JournalSynthesizer? = nil) {
         self.journalRepository = journalRepository
+        self.journalSynthesizer = journalSynthesizer
     }
 
     // MARK: - Loading
@@ -140,5 +142,33 @@ final class JournalViewModel {
     func dismissError() {
         showError = false
         errorMessage = nil
+    }
+
+    // MARK: - Journal Synthesis
+
+    /// Synthesize today's journal on-demand
+    /// - Parameter entry: The journal entry to synthesize
+    /// - Returns: Tuple of (synthesizedText, moodScore) or nil if failed
+    func synthesizeTodayOnDemand(for entry: JournalEntry) async -> (text: String, mood: Int)? {
+        guard let synthesizer = journalSynthesizer else {
+            errorMessage = "Journal synthesis not available"
+            showError = true
+            return nil
+        }
+
+        let result = await synthesizer.synthesizeTodayOnDemand()
+        if result != nil {
+            await loadEntries()  // Reload to get updated entry
+        }
+        return result
+    }
+
+    /// Check if an entry is locked (read-only)
+    /// Only past entries are locked - today's entry is always editable
+    func isEntryLocked(for entry: JournalEntry) -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let entryDay = calendar.startOfDay(for: entry.entryDate)
+        return entryDay < today
     }
 }

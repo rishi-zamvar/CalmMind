@@ -7,9 +7,11 @@ struct SettingsView: View {
     @AppStorage("privacyMode") private var privacyMode = false
     @AppStorage("notificationPrivacyMode") private var notificationPrivacyMode = "detailed"
     @AppStorage("autoJournalingEnabled") private var autoJournalingEnabled = false
+    @AppStorage("weatherEnabled") private var weatherEnabled = true
 
     @State private var showingDeleteConfirmation = false
     @State private var showingAPIKeySheet = false
+    @State private var showingWeatherAPIKeySheet = false
 
     var body: some View {
         Form {
@@ -54,6 +56,38 @@ struct SettingsView: View {
                     .foregroundColor(DesignTokens.Colors.textSecondary)
             } footer: {
                 Text("When enabled, private items are excluded from AI context.")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textTertiary)
+            }
+
+            // Features section
+            Section {
+                Toggle("Weather", isOn: $weatherEnabled)
+
+                Button {
+                    showingWeatherAPIKeySheet = true
+                } label: {
+                    HStack {
+                        Text("Weather API Key")
+                            .font(DesignTokens.Typography.body)
+                            .foregroundColor(DesignTokens.Colors.textPrimary)
+                        Spacer()
+                        if KeychainSecretsStore.shared.hasWeatherAPIKey {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(DesignTokens.Colors.sage)
+                        } else {
+                            Text("Not set")
+                                .font(DesignTokens.Typography.meta)
+                                .foregroundColor(DesignTokens.Colors.textTertiary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Features")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
+            } footer: {
+                Text("Weather requires a free OpenWeatherMap API key and location access.")
                     .font(DesignTokens.Typography.meta)
                     .foregroundColor(DesignTokens.Colors.textTertiary)
             }
@@ -165,6 +199,11 @@ struct SettingsView: View {
         .sheet(isPresented: $showingAPIKeySheet) {
             NavigationStack {
                 APIKeySetupView(isPresented: $showingAPIKeySheet)
+            }
+        }
+        .sheet(isPresented: $showingWeatherAPIKeySheet) {
+            NavigationStack {
+                WeatherAPIKeySetupView(isPresented: $showingWeatherAPIKeySheet)
             }
         }
     }

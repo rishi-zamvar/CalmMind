@@ -25,7 +25,8 @@ actor JournalSynthesizer {
 
     private let journalPersistence: any JournalPersistenceProtocol
     private let journalGenerator: any JournalSynthesizerProtocol
-    private let calendar: Calendar
+    private let services: ServiceContainer?
+    private let fallbackCalendar: Calendar
     private let logger = Logger(subsystem: "com.calmmind", category: "JournalSynthesizer")
 
     // MARK: - State
@@ -35,6 +36,19 @@ actor JournalSynthesizer {
 
     // MARK: - Initialization
 
+    /// Initialize with ServiceContainer (preferred for timezone handling)
+    init(
+        journalPersistence: any JournalPersistenceProtocol,
+        journalGenerator: any JournalSynthesizerProtocol,
+        services: ServiceContainer
+    ) {
+        self.journalPersistence = journalPersistence
+        self.journalGenerator = journalGenerator
+        self.services = services
+        self.fallbackCalendar = services.calendar
+    }
+
+    /// Backwards-compatible initializer without ServiceContainer
     init(
         journalPersistence: any JournalPersistenceProtocol,
         journalGenerator: any JournalSynthesizerProtocol,
@@ -42,7 +56,40 @@ actor JournalSynthesizer {
     ) {
         self.journalPersistence = journalPersistence
         self.journalGenerator = journalGenerator
-        self.calendar = calendar
+        self.services = nil
+        self.fallbackCalendar = calendar
+    }
+
+    // MARK: - Private Helpers
+
+    /// Get timezone-aware calendar (from services or fallback)
+    private var calendar: Calendar {
+        services?.calendar ?? fallbackCalendar
+    }
+
+    /// Get yesterday's start using timezone-aware calendar
+    private func yesterdayStart() async -> Date {
+        if let services = services {
+            // Use ServiceContainer's timezone-aware method (MainActor)
+            return await MainActor.run {
+                services.yesterdayStart()
+            }
+        } else {
+            // Fallback to local calendar
+            let now = Date()
+            guard let yesterday = fallbackCalendar.date(byAdding: .day, value: -1, to: now) else {
+                return fallbackCalendar.startOfDay(for: now)
+            }
+            return fallbackCalendar.startOfDay(for: yesterday)
+        }
+    }
+
+    /// Get weather progression for a date (for future use)
+    private func getWeatherProgression(for date: Date) async -> WeatherProgression? {
+        guard let services = services else { return nil }
+        return await MainActor.run {
+            services.weatherStore.getProgression(for: date)
+        }
     }
 
     // MARK: - Public API
@@ -61,12 +108,11 @@ actor JournalSynthesizer {
         }
         lastCheckedAt = now
 
-        // Calculate yesterday's date
-        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: now) else {
-            logger.error("Failed to calculate yesterday's date")
-            return false
-        }
-        let yesterdayStart = calendar.startOfDay(for: yesterday)
+        // Get yesterday's start using timezone-aware calendar
+        let yesterdayStart = await self.yesterdayStart()
+
+        // Get weather progression for yesterday (for future weather-mood correlation)
+        _ = await getWeatherProgression(for: yesterdayStart)
 
         do {
             // Fetch yesterday's entry
@@ -124,7 +170,75 @@ actor JournalSynthesizer {
         lastCheckedAt = nil
     }
 
-    // MARK: - Private Helpers
+    // MARK: - On-Demand Synthesis (Today)
+
+    /// Synthesize TODAY's journal on-demand (user initiated)
+    /// Unlike synthesizeYesterdayIfNeeded, this:
+    /// - Always runs (no throttle for user action)
+    /// - Works on today's entry
+    /// - Returns synthesized text and mood score
+    /// - Parameters:
+    ///   - forceResynthesis: If true, regenerate even if already synthesized
+    /// - Returns: Tuple of (synthesizedText, moodScore) or nil if no events
+    func synthesizeTodayOnDemand(forceResynthesis: Bool = false) async -> (text: String, mood: Int)? {
+        let today = calendar.startOfDay(for: Date())
+
+        do {
+            guard let entry = try await journalPersistence.fetchEntry(for: today) else {
+                logger.debug("No journal entry for today")
+                return nil
+            }
+
+            let includedEvents = entry.includedEvents
+            guard !includedEvents.isEmpty else {
+                logger.debug("No events to synthesize for today")
+                return nil
+            }
+
+            let currentDigest = await journalPersistence.computeEventsDigest(for: entry)
+
+            // Skip if already synthesized with same digest (unless forced)
+            if !forceResynthesis && entry.isSynthesized && entry.eventsDigest == currentDigest {
+                if let existing = entry.synthesizedText {
+                    let mood = entry.moodScore ?? MoodAnalyzer.analyzeMood(from: existing) ?? 5
+                    return (existing, mood)
+                }
+            }
+
+            let cappedEvents = capEvents(Array(includedEvents))
+            logger.info("Synthesizing today's journal with \(cappedEvents.count) events")
+
+            let narrative = try await journalGenerator.synthesizeJournal(from: cappedEvents)
+            let cappedNarrative = String(narrative.prefix(maxSynthesizedLength))
+
+            // Auto-detect mood from synthesized text
+            let mood = MoodAnalyzer.analyzeMood(from: cappedNarrative) ?? 5
+
+            try await journalPersistence.markSynthesized(
+                entryDate: today,
+                synthesizedText: cappedNarrative,
+                synthesizedAt: Date(),
+                eventsDigest: currentDigest
+            )
+
+            // Also set mood score
+            try await journalPersistence.updateMoodScore(for: today, score: mood)
+
+            logger.info("Successfully synthesized today's journal, mood: \(mood)")
+            return (cappedNarrative, mood)
+        } catch {
+            logger.error("Today synthesis failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Check if entry is locked (read-only)
+    /// Only locked if entry is from a PREVIOUS day
+    func isEntryLocked(for date: Date) -> Bool {
+        let today = calendar.startOfDay(for: Date())
+        let entryDay = calendar.startOfDay(for: date)
+        return entryDay < today
+    }
 
     private func capEvents(_ events: [JournalEvent]) -> [JournalEvent] {
         var result: [JournalEvent] = []

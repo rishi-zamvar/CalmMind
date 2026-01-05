@@ -67,6 +67,11 @@ final class AIOrchestrator: AIOrchestratorProtocol {
     private let analytics: AnalyticsProtocol?
     private let logger = Logger(subsystem: "com.calmmind", category: "AIOrchestrator")
 
+    // Weather & Semantic context (optional - gates decide usage)
+    private let services: ServiceContainer?
+    private let semanticSearchGate: SemanticSearchGate?
+    private let semanticSearchEngine: SemanticSearchEngine?
+
     /// Callback for showing undo toast when auto-journaling saves
     var onJournalEventSaved: ((UUID) -> Void)?
 
@@ -86,7 +91,10 @@ final class AIOrchestrator: AIOrchestratorProtocol {
         journalPersistence: JournalPersistenceActor? = nil,
         preferences: UserPreferences = .shared,
         clock: any DateClock = SystemClock(),
-        analytics: AnalyticsProtocol? = nil
+        analytics: AnalyticsProtocol? = nil,
+        services: ServiceContainer? = nil,
+        semanticSearchGate: SemanticSearchGate? = nil,
+        semanticSearchEngine: SemanticSearchEngine? = nil
     ) {
         self.openAIService = openAIService
         self.contextManager = contextManager
@@ -103,6 +111,9 @@ final class AIOrchestrator: AIOrchestratorProtocol {
         self.preferences = preferences
         self.clock = clock
         self.analytics = analytics
+        self.services = services
+        self.semanticSearchGate = semanticSearchGate
+        self.semanticSearchEngine = semanticSearchEngine
     }
 
     // MARK: - Message Processing
@@ -148,6 +159,12 @@ final class AIOrchestrator: AIOrchestratorProtocol {
             todaysJournal = nil
         }
 
+        // Build weather context (discretionary - only extreme/transition)
+        let weatherContext = buildWeatherContext()
+
+        // Build semantic context (auto-enabled when threshold met)
+        let semanticContext = await buildSemanticContext(query: trimmed)
+
         // Build system prompt with all explicit parameters (pure function)
         let systemPrompt = SystemPromptBuilder.build(
             userName: preferences.userName,
@@ -155,7 +172,9 @@ final class AIOrchestrator: AIOrchestratorProtocol {
             recentTodos: todoTitles,
             todaysJournal: todaysJournal,
             memories: [],  // TODO: Add memory retrieval
-            currentDate: clock.now
+            currentDate: clock.now,
+            weatherContext: weatherContext,
+            semanticContext: semanticContext
         )
 
         // Prepare messages for OpenAI
@@ -516,6 +535,60 @@ final class AIOrchestrator: AIOrchestratorProtocol {
             logger.debug("Excluded journal event \(eventID)")
         } catch {
             logger.error("Failed to exclude journal event: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Context Building (Weather & Semantic)
+
+    /// Build weather context for system prompt
+    /// Only returns context for extreme weather or notable transitions
+    /// Returns nil if: no services, privacy mode, no API key, or weather not noteworthy
+    private func buildWeatherContext() -> String? {
+        guard let services = services else { return nil }
+
+        // Gate checks: privacy mode + API availability
+        guard services.weatherAPIStatus == .available else { return nil }
+
+        // Get cached weather (don't fetch - we're in a message processing flow)
+        guard let current = services.weatherService.getCachedWeather() else { return nil }
+
+        // Get progression and history for mention decision
+        let progression = services.weatherStore.getProgression(for: services.startOfDay(for: clock.now))
+        let recentHistory = services.weatherStore.getRecentDays()
+
+        // WeatherContextProvider decides if this weather is worth mentioning
+        guard WeatherContextProvider.shouldMentionWeather(
+            current: current,
+            progression: progression.hadTransition ? progression : nil,
+            recentHistory: recentHistory.isEmpty ? nil : recentHistory
+        ) else {
+            return nil
+        }
+
+        // Build the context string
+        return WeatherContextProvider.buildContext(
+            current: current,
+            progression: progression.hadTransition ? progression : nil,
+            location: current.locationName
+        )
+    }
+
+    /// Build semantic context for system prompt
+    /// Only returns context if gate allows and search succeeds
+    /// Returns nil if: no engine, privacy mode, below threshold, or search fails
+    private func buildSemanticContext(query: String) async -> String? {
+        guard let gate = semanticSearchGate,
+              let engine = semanticSearchEngine else { return nil }
+
+        // Gate checks: privacy mode + topic threshold
+        guard gate.shouldEnableContext() else { return nil }
+
+        do {
+            let results = try await engine.search(query: query, limit: 3)
+            return SemanticContextBuilder.buildContext(from: results)
+        } catch {
+            logger.debug("Semantic search failed: \(error.localizedDescription)")
+            return nil  // Non-critical failure
         }
     }
 }

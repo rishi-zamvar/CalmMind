@@ -380,6 +380,138 @@ final class WeatherTests: XCTestCase {
         XCTAssertEqual(weather1, weather2)
     }
 
+    // MARK: - Temperature Boundary Tests (Partition Table)
+    // Config thresholds: extremeCold=32, mildCold=45, mildHeat=85, extremeHeat=95
+    //
+    // Partition table:
+    // | Range       | Category      | isExtreme | isMildlyUncomfortable |
+    // |-------------|---------------|-----------|------------------------|
+    // | temp <= 32  | Extreme cold  | true      | false                  |
+    // | 32 < temp < 45 | Mild cold  | false     | true                   |
+    // | 45 <= temp < 85 | Comfortable | false   | false                  |
+    // | 85 <= temp < 95 | Mild hot   | false     | true                   |
+    // | temp >= 95  | Extreme hot   | true      | false                  |
+
+    func test_isExtreme_32F_returnsTrue() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 32.0)
+
+        XCTAssertTrue(weather.isExtreme(config: config), "32°F should be extreme cold")
+    }
+
+    func test_isMildlyUncomfortable_32F_returnsFalse() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 32.0)
+
+        XCTAssertFalse(weather.isMildlyUncomfortable(config: config), "32°F is extreme, not mild")
+    }
+
+    func test_isExtreme_33F_returnsFalse() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 33.0)
+
+        XCTAssertFalse(weather.isExtreme(config: config), "33°F is above extreme cold threshold")
+    }
+
+    func test_isMildlyUncomfortable_33F_returnsTrue() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 33.0)
+
+        XCTAssertTrue(weather.isMildlyUncomfortable(config: config), "33°F should be mildly cold")
+    }
+
+    func test_isMildlyUncomfortable_44F_returnsTrue() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 44.0)
+
+        XCTAssertTrue(weather.isMildlyUncomfortable(config: config), "44°F should be mildly cold")
+    }
+
+    func test_isMildlyUncomfortable_45F_returnsFalse() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 45.0)
+
+        XCTAssertFalse(weather.isMildlyUncomfortable(config: config), "45°F is comfortable")
+    }
+
+    func test_isMildlyUncomfortable_70F_returnsFalse() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 70.0)
+
+        XCTAssertFalse(weather.isMildlyUncomfortable(config: config), "70°F is comfortable")
+    }
+
+    func test_isMildlyUncomfortable_84F_returnsFalse() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 84.0)
+
+        XCTAssertFalse(weather.isMildlyUncomfortable(config: config), "84°F is still comfortable")
+    }
+
+    func test_isMildlyUncomfortable_85F_returnsTrue() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 85.0)
+
+        XCTAssertTrue(weather.isMildlyUncomfortable(config: config), "85°F should be mildly hot")
+    }
+
+    func test_isMildlyUncomfortable_94F_returnsTrue() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 94.0)
+
+        XCTAssertTrue(weather.isMildlyUncomfortable(config: config), "94°F should be mildly hot")
+    }
+
+    func test_isExtreme_95F_returnsTrue() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 95.0)
+
+        XCTAssertTrue(weather.isExtreme(config: config), "95°F should be extreme heat")
+    }
+
+    func test_isMildlyUncomfortable_95F_returnsFalse() {
+        let config = WeatherConfig()
+        let weather = makeWeather(temperature: 95.0)
+
+        XCTAssertFalse(weather.isMildlyUncomfortable(config: config), "95°F is extreme, not mild")
+    }
+
+    func test_extremeAndMild_noOverlap() {
+        // Verify partition table: no temperature can be BOTH extreme AND mildly uncomfortable
+        let config = WeatherConfig()
+
+        for temp in stride(from: 0.0, through: 120.0, by: 1.0) {
+            let weather = makeWeather(temperature: temp)
+            let isExtreme = weather.isExtreme(config: config)
+            let isMild = weather.isMildlyUncomfortable(config: config)
+
+            XCTAssertFalse(isExtreme && isMild,
+                "\(temp)°F cannot be both extreme AND mildly uncomfortable")
+        }
+    }
+
+    func test_formattedTemperature_accessibilityLabel() {
+        let weather = makeWeather(temperature: 72.0)
+
+        XCTAssertEqual(weather.formattedTemperature, "72 degrees Fahrenheit")
+    }
+
+    // MARK: - Helpers
+
+    private func makeWeather(
+        temperature: Double,
+        condition: WeatherCondition = .clear
+    ) -> Weather {
+        Weather(
+            temperature: temperature,
+            condition: condition,
+            description: "test",
+            humidity: 50,
+            locationName: "Test",
+            timestamp: Date()
+        )
+    }
+
     // MARK: - Codable Conformance
 
     func test_weather_roundTrips() throws {

@@ -10,6 +10,7 @@ protocol JournalPersistenceProtocol: Actor {
     func fetchEntry(for date: Date) throws -> JournalEntry?
     func markSynthesized(entryDate: Date, synthesizedText: String, synthesizedAt: Date, eventsDigest: String) throws
     func computeEventsDigest(for entry: JournalEntry) -> String
+    func updateMoodScore(for date: Date, score: Int) throws
 }
 
 /// Thread-safe actor for journal persistence operations
@@ -116,6 +117,24 @@ actor JournalPersistenceActor: JournalPersistenceProtocol {
 
         let hash = SHA256.hash(data: Data(combined.utf8))
         return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
+
+    // MARK: - Mood Score
+
+    /// Update the mood score for an entry
+    /// - Parameters:
+    ///   - date: The date of the entry
+    ///   - score: Mood score 1-10
+    func updateMoodScore(for date: Date, score: Int) throws {
+        guard let entry = try fetchEntry(for: date) else {
+            logger.warning("Cannot update mood: no entry for \(JournalEntry.formatDateKey(date))")
+            return
+        }
+
+        entry.moodScore = score
+        entry.modifiedAt = Date()
+        try context.save()
+        logger.debug("Updated mood score for \(entry.dateKey) to \(score)")
     }
 
     // MARK: - Private Helpers

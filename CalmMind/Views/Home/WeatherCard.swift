@@ -3,19 +3,52 @@ import SwiftUI
 /// Compact weather display for home page
 /// Single line format: "San Francisco · 58°F ☀️"
 /// If state is .hidden, returns EmptyView
+/// Permission request happens on user tap when notDetermined
 struct WeatherCard: View {
-    let viewModel: WeatherViewModel
+    @Bindable var viewModel: WeatherViewModel
 
     var body: some View {
         switch viewModel.state {
         case .hidden:
             EmptyView()
 
+        case .needsPermission:
+            permissionRequestView
+
         case .loading:
             loadingView
 
         case .loaded(let weather, let locationString):
             weatherContent(weather: weather, locationString: locationString)
+        }
+    }
+
+    // MARK: - Permission Request
+
+    private var permissionRequestView: some View {
+        Button {
+            Task {
+                await viewModel.requestLocationPermission()
+            }
+        } label: {
+            HStack(spacing: DesignTokens.Spacing.cardPad / 2) {
+                Image(systemName: "location.fill")
+                    .foregroundStyle(DesignTokens.Colors.warmClay)
+                Text("Tap to enable weather")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, DesignTokens.Spacing.cardPad / 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Enable location for weather")
+        .accessibilityHint("Tapping will request location permission")
+        .onAppear {
+            // Re-check permission state in case it was stale on initial load
+            Task {
+                await viewModel.loadWeather()
+            }
         }
     }
 
@@ -29,12 +62,27 @@ struct WeatherCard: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)  // Location truncates, temp/emoji preserved
+                .accessibilityLabel("Weather: \(locationString), \(weather.formattedTemperature), \(weather.condition.displayName)")
 
             Spacer(minLength: 0)
+
+            // Manual refresh button - SEPARATE accessibility element
+            Button {
+                Task {
+                    await viewModel.refreshWeather()
+                }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: DesignTokens.Sizing.hitTargetMin, height: DesignTokens.Sizing.hitTargetMin)
+                    .contentShape(Rectangle())  // Make entire frame tappable
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Refresh weather")
+            .accessibilityHint("Double tap to update weather information")
         }
         .padding(.vertical, DesignTokens.Spacing.cardPad / 2)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Weather: \(locationString), \(Int(weather.temperature)) degrees Fahrenheit, \(weather.condition.displayName)")
     }
 
     private var loadingView: some View {
@@ -67,7 +115,8 @@ struct WeatherCard: View {
 private struct PreviewLocationService: LocationServiceProtocol {
     var authorizationStatus: CLAuthorizationStatus { .authorizedWhenInUse }
     var isDenied: Bool { false }
-    func requestAuthorizationOnce() async {}
+    var permissionState: LocationPermissionState { .authorized }
+    func requestPermissionIfNeeded() async -> Bool { false }
     func getLocationThrottled() async -> CLLocationCoordinate2D? {
         CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
     }

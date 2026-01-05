@@ -152,11 +152,21 @@ final class MockViewModelLocationService: LocationServiceProtocol, @unchecked Se
     var mockLocationString: String?
     var mockIsDenied = false
     var getLocationThrottledCalled = false
+    var requestPermissionIfNeededCalled = false
 
     var authorizationStatus: CLAuthorizationStatus { mockIsDenied ? .denied : .authorizedWhenInUse }
     var isDenied: Bool { mockIsDenied }
 
+    var permissionState: LocationPermissionState {
+        mockIsDenied ? .denied : .authorized
+    }
+
     func requestAuthorizationOnce() async {}
+
+    func requestPermissionIfNeeded() async -> Bool {
+        requestPermissionIfNeededCalled = true
+        return true
+    }
 
     func getLocationThrottled() async -> CLLocationCoordinate2D? {
         getLocationThrottledCalled = true

@@ -3,6 +3,8 @@ import XCTest
 
 /// Tests for WeatherStore - weather history and progression tracking
 /// TDD: These tests are written FIRST, implementation follows
+/// @MainActor: Required because WeatherStore is @MainActor isolated
+@MainActor
 final class WeatherStoreTests: XCTestCase {
 
     var mockDefaults: UserDefaults!

@@ -340,6 +340,7 @@ final class EmbeddingServiceTests: XCTestCase {
 
 final class MockEmbeddingSecretsStore: SecretsStore {
     var mockAPIKey: String?
+    var mockWeatherAPIKey: String?
 
     func saveAPIKey(_ key: String) throws {
         mockAPIKey = key
@@ -355,5 +356,22 @@ final class MockEmbeddingSecretsStore: SecretsStore {
 
     var hasAPIKey: Bool {
         mockAPIKey != nil
+    }
+
+    // Weather API Key
+    func saveWeatherAPIKey(_ key: String) throws {
+        mockWeatherAPIKey = key
+    }
+
+    func getWeatherAPIKey() -> String? {
+        mockWeatherAPIKey
+    }
+
+    func deleteWeatherAPIKey() {
+        mockWeatherAPIKey = nil
+    }
+
+    var hasWeatherAPIKey: Bool {
+        mockWeatherAPIKey != nil
     }
 }

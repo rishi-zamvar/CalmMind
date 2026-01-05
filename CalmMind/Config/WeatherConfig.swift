@@ -16,8 +16,13 @@ struct WeatherConfig {
         static let cacheExpirationMinutes = 60
 
         // Extreme temperature thresholds (°F)
-        static let extremeColdThreshold: Double = 32
-        static let extremeHeatThreshold: Double = 95
+        static let extremeColdThreshold: Double = 32  // <= this is extreme cold
+        static let extremeHeatThreshold: Double = 95  // >= this is extreme heat
+
+        // Mild discomfort thresholds (°F)
+        // Partition: 32 < temp < 45 = chilly, 85 <= temp < 95 = warm
+        static let mildColdThreshold: Double = 45
+        static let mildHeatThreshold: Double = 85
 
         // Pleasant temperature range (°F)
         static let pleasantTempMin: Double = 60
@@ -26,6 +31,10 @@ struct WeatherConfig {
         // Weather transition detection
         static let rainyDaysLookbackWindow = 3   // Days to look back for rain pattern
         static let minRainyDaysForTransition = 2 // Min rainy days to trigger "first clear" mention
+
+        // Condition sets for weather mention logic
+        static let mentionConditions: Set<WeatherCondition> = [.drizzle, .mist, .fog]
+        static let rainyConditions: Set<WeatherCondition> = [.rain, .drizzle, .thunderstorm]
     }
 
     // MARK: - Properties
@@ -54,11 +63,23 @@ struct WeatherConfig {
     /// Maximum temperature for "pleasant" classification (°F)
     let pleasantTempMax: Double
 
+    /// Temperature below which weather is mildly cold (chilly) - above extreme cold (°F)
+    let mildColdThreshold: Double
+
+    /// Temperature at which weather becomes mildly hot (warm) - below extreme heat (°F)
+    let mildHeatThreshold: Double
+
     /// Days to look back when detecting rain → clear transitions
     let rainyDaysLookbackWindow: Int
 
     /// Minimum rainy days in lookback window to trigger "first clear day" mention
     let minRainyDaysForTransition: Int
+
+    /// Conditions worth mentioning (drizzle, mist, fog)
+    let mentionConditions: Set<WeatherCondition>
+
+    /// Conditions considered "rainy" for transition detection
+    let rainyConditions: Set<WeatherCondition>
 
     // MARK: - Computed Properties
 
@@ -84,8 +105,12 @@ struct WeatherConfig {
         extremeHeatThreshold: Double = Defaults.extremeHeatThreshold,
         pleasantTempMin: Double = Defaults.pleasantTempMin,
         pleasantTempMax: Double = Defaults.pleasantTempMax,
+        mildColdThreshold: Double = Defaults.mildColdThreshold,
+        mildHeatThreshold: Double = Defaults.mildHeatThreshold,
         rainyDaysLookbackWindow: Int = Defaults.rainyDaysLookbackWindow,
-        minRainyDaysForTransition: Int = Defaults.minRainyDaysForTransition
+        minRainyDaysForTransition: Int = Defaults.minRainyDaysForTransition,
+        mentionConditions: Set<WeatherCondition> = Defaults.mentionConditions,
+        rainyConditions: Set<WeatherCondition> = Defaults.rainyConditions
     ) {
         self.apiEndpoint = apiEndpoint
         self.units = units
@@ -95,8 +120,12 @@ struct WeatherConfig {
         self.extremeHeatThreshold = extremeHeatThreshold
         self.pleasantTempMin = pleasantTempMin
         self.pleasantTempMax = pleasantTempMax
+        self.mildColdThreshold = mildColdThreshold
+        self.mildHeatThreshold = mildHeatThreshold
         self.rainyDaysLookbackWindow = rainyDaysLookbackWindow
         self.minRainyDaysForTransition = minRainyDaysForTransition
+        self.mentionConditions = mentionConditions
+        self.rainyConditions = rainyConditions
     }
 
     // MARK: - URL Building

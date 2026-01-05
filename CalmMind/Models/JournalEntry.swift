@@ -3,7 +3,7 @@ import SwiftData
 
 /// A journal entry for a specific day
 @Model
-final class JournalEntry {
+final class JournalEntry: Identifiable {
 
     // MARK: - Properties
 

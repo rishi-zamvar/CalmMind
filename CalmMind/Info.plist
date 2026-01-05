@@ -27,6 +27,8 @@
 		<key>UIImageName</key>
 		<string></string>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CalmMind uses your location to show local weather conditions and provide context-aware support.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

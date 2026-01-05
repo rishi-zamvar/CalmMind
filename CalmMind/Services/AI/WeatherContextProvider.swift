@@ -7,15 +7,18 @@ struct WeatherContextProvider {
 
     // MARK: - Should Mention Weather
 
-    /// Determine if weather should be mentioned - CONSERVATIVE logic
-    /// Only returns true for:
-    /// 1. Extreme conditions (rain, snow, thunderstorm, extreme temps)
+    /// Determine if weather should be mentioned
+    /// PRIORITY ORDER: Extreme > Transition > MildlyUncomfortable > MentionConditions > FirstClear
+    ///
+    /// Returns true for:
+    /// 1. Extreme conditions (rain, snow, thunderstorm, extreme temps <=32°F or >=95°F)
     /// 2. Notable transitions today (rain → clear)
-    /// 3. First clear day after multiple rainy days
+    /// 3. Mild discomfort (chilly 32-45°F or warm 85-95°F)
+    /// 4. Mention-worthy conditions (drizzle, mist, fog)
+    /// 5. First clear day after rainy yesterday
     ///
     /// Does NOT return true for:
-    /// - Normal pleasant weather
-    /// - Cloudy but otherwise unremarkable days
+    /// - Normal pleasant weather (60-80°F and clear/cloudy)
     static func shouldMentionWeather(
         current: Weather?,
         progression: WeatherProgression?,
@@ -24,7 +27,7 @@ struct WeatherContextProvider {
     ) -> Bool {
         guard let current = current else { return false }
 
-        // 1. Extreme weather: always relevant (uses config thresholds)
+        // 1. Extreme weather: HIGHEST PRIORITY - always relevant
         if current.isExtreme(config: config) {
             return true
         }
@@ -34,14 +37,33 @@ struct WeatherContextProvider {
             return true
         }
 
-        // 3. First clear day after multiple rainy days
-        // Uses config.rainyDaysLookbackWindow and config.minRainyDaysForTransition
+        // 3. Mild discomfort (chilly or warm) - only if NOT extreme
+        if current.isMildlyUncomfortable(config: config) {
+            return true
+        }
+
+        // 4. Conditions from config.mentionConditions (drizzle, mist, fog)
+        if config.mentionConditions.contains(current.condition) {
+            return true
+        }
+
+        // 5. First clear day after rainy YESTERDAY
+        // Use explicit date equality, NOT array index assumption
         if current.condition == .clear,
            let history = recentHistory,
            !history.isEmpty {
-            let rainyDays = history.filter { $0.condition == .rain || $0.condition == .drizzle || $0.condition == .thunderstorm }
-            if rainyDays.count >= config.minRainyDaysForTransition {
-                return true
+            let calendar = Calendar.current
+            let now = Date()
+            guard let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now)) else {
+                return false
+            }
+
+            // Find record for yesterday by date equality, not by index
+            if let yesterdayRecord = history.first(where: { calendar.isDate($0.timestamp, inSameDayAs: yesterdayStart) }) {
+                // If yesterday was rainy, and today is clear → transition mention
+                if config.rainyConditions.contains(yesterdayRecord.condition) {
+                    return true
+                }
             }
         }
 

@@ -25,15 +25,21 @@ struct JournalDetailView: View {
 
                     Spacer()
 
-                    // Mood picker
-                    MoodPicker(
-                        selectedMood: entry.moodScore,
-                        onSelect: { score in
-                            Task {
-                                await viewModel.setMoodScore(entry, score: score)
-                            }
+                    // Auto Journal button (today) or Mood badge (past entries)
+                    if viewModel.isEntryLocked(for: entry) {
+                        // Past entry: show mood badge (read-only)
+                        if let mood = entry.moodScore {
+                            MoodBadge(score: mood)
                         }
-                    )
+                    } else {
+                        // Today's entry: show Auto Journal button
+                        AutoJournalButton(
+                            entry: entry,
+                            onSynthesize: {
+                                await viewModel.synthesizeTodayOnDemand(for: entry)
+                            }
+                        )
+                    }
                 }
                 .padding(.horizontal)
 
@@ -164,59 +170,6 @@ struct JournalDetailView: View {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
-    }
-}
-
-/// Mood score picker (warm styling)
-struct MoodPicker: View {
-    let selectedMood: Int?
-    let onSelect: (Int) -> Void
-
-    var body: some View {
-        Menu {
-            ForEach(1...10, id: \.self) { score in
-                Button {
-                    onSelect(score)
-                } label: {
-                    HStack {
-                        Text("\(score)")
-                        Text(moodEmoji(for: score))
-                        if selectedMood == score {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            HStack {
-                if let mood = selectedMood {
-                    Text(moodEmoji(for: mood))
-                    Text("\(mood)")
-                        .font(DesignTokens.Typography.body)
-                } else {
-                    Text("Set Mood")
-                        .font(DesignTokens.Typography.body)
-                }
-                Image(systemName: "chevron.down")
-                    .font(.caption)
-            }
-            .foregroundColor(DesignTokens.Colors.textPrimary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(DesignTokens.Colors.subtleSection)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.button))
-        }
-    }
-
-    private func moodEmoji(for score: Int) -> String {
-        switch score {
-        case 1...2: return "😢"
-        case 3...4: return "😕"
-        case 5...6: return "😐"
-        case 7...8: return "🙂"
-        case 9...10: return "😊"
-        default: return "😐"
-        }
     }
 }
 

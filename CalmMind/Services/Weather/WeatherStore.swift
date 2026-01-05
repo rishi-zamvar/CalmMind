@@ -3,6 +3,10 @@ import CoreLocation
 
 /// Weather history and cache management for journal correlation
 /// All thresholds from config, NO magic numbers
+///
+/// @MainActor: All access is UI-thread safe. Actors must use:
+/// `await MainActor.run { store.method() }` to access
+@MainActor
 final class WeatherStore {
 
     // MARK: - Cache Keys

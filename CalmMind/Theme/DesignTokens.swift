@@ -72,6 +72,13 @@ enum DesignTokens {
         static let pill: CGFloat = 999          // Full capsule
     }
 
+    // MARK: - Sizing
+
+    enum Sizing {
+        /// Minimum hit target size per Apple HIG (44x44 points)
+        static let hitTargetMin: CGFloat = 44
+    }
+
     // MARK: - Shadow
 
     /// Single global shadow style - apply to cards only, never rows

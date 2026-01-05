@@ -106,8 +106,10 @@ struct ContentView: View {
 // MARK: - Tab Views
 
 /// Chat tab wrapper that creates ViewModel
+/// INVARIANT: One orchestrator per tab session, not per render
 struct ChatTabView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var services: ServiceContainer
 
     let sessionRepository: SessionRepository
     let messageRepository: MessageRepository
@@ -115,6 +117,8 @@ struct ChatTabView: View {
     let journalRepository: JournalRepository
     var autoFocus: Bool = false
 
+    // Store orchestrator - created ONCE per session
+    @State private var orchestrator: AIOrchestrator?
     @State private var viewModel: ChatViewModel?
 
     var body: some View {
@@ -124,15 +128,19 @@ struct ChatTabView: View {
             } else {
                 ProgressView("Loading...")
                     .tint(DesignTokens.Colors.warmClay)
-                    .onAppear {
-                        // Create orchestrator with all required dependencies
-                        let orchestrator = createOrchestrator()
-                        viewModel = ChatViewModel(
-                            orchestrator: orchestrator,
-                            sessionRepository: sessionRepository,
-                            messageRepository: messageRepository
-                        )
-                    }
+            }
+        }
+        .task {
+            // Create orchestrator ONCE on first appear
+            if orchestrator == nil {
+                orchestrator = createOrchestrator()
+            }
+            if viewModel == nil, let orc = orchestrator {
+                viewModel = ChatViewModel(
+                    orchestrator: orc,
+                    sessionRepository: sessionRepository,
+                    messageRepository: messageRepository
+                )
             }
         }
     }
@@ -158,6 +166,17 @@ struct ChatTabView: View {
             modelContainer: modelContext.container
         )
 
+        // Create semantic search components
+        let topicRepository = TopicRepository(context: modelContext)
+        let semanticSearchGate = SemanticSearchGate(
+            topicRepository: topicRepository,
+            userPreferences: services.userPreferences
+        )
+        let semanticSearchEngine = SemanticSearchEngine(
+            embeddingService: services.embeddingService,
+            topicRepository: topicRepository
+        )
+
         return AIOrchestrator(
             openAIService: OpenAIService(),
             contextManager: ContextManager(),
@@ -169,7 +188,10 @@ struct ChatTabView: View {
             sessionRepository: sessionRepository,
             todoRepository: todoRepository,
             journalRepository: journalRepository,
-            journalPersistence: journalPersistence
+            journalPersistence: journalPersistence,
+            services: services,
+            semanticSearchGate: semanticSearchGate,
+            semanticSearchEngine: semanticSearchEngine
         )
     }
 }
@@ -195,11 +217,15 @@ struct TodoTabView: View {
     }
 }
 
-/// Journal tab wrapper that creates ViewModel
+/// Journal tab wrapper that creates ViewModel with synthesis support
 struct JournalTabView: View {
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var services: ServiceContainer
+
     let journalRepository: JournalRepository
 
     @State private var viewModel: JournalViewModel?
+    @State private var journalSynthesizer: JournalSynthesizer?
 
     var body: some View {
         Group {
@@ -207,11 +233,32 @@ struct JournalTabView: View {
                 JournalListView(viewModel: viewModel)
             } else {
                 ProgressView("Loading...")
-                    .onAppear {
-                        viewModel = JournalViewModel(journalRepository: journalRepository)
-                    }
             }
         }
+        .task {
+            if journalSynthesizer == nil {
+                journalSynthesizer = createJournalSynthesizer()
+            }
+            if viewModel == nil {
+                viewModel = JournalViewModel(
+                    journalRepository: journalRepository,
+                    journalSynthesizer: journalSynthesizer
+                )
+            }
+        }
+    }
+
+    private func createJournalSynthesizer() -> JournalSynthesizer {
+        let journalPersistence = JournalPersistenceActor(
+            modelContainer: modelContext.container
+        )
+        let journalGenerator = JournalGenerator(openAIService: OpenAIService())
+
+        return JournalSynthesizer(
+            journalPersistence: journalPersistence,
+            journalGenerator: journalGenerator,
+            services: services
+        )
     }
 }
 
