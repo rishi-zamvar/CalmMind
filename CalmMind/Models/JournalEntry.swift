@@ -51,6 +51,17 @@ final class JournalEntry: Identifiable {
     /// Whether end-of-day synthesis has been completed
     var isSynthesized: Bool = false
 
+    // MARK: - AI Insights Properties
+
+    /// Encoded JournalInsights JSON (stored for persistence)
+    var insightsData: Data?
+
+    /// Decoded insights (computed from insightsData)
+    var insights: JournalInsights? {
+        guard let data = insightsData else { return nil }
+        return try? JSONDecoder().decode(JournalInsights.self, from: data)
+    }
+
     // MARK: - Initialization
 
     init(
@@ -85,15 +96,12 @@ final class JournalEntry: Identifiable {
         events.filter { $0.includeInSynthesis }
     }
 
-    /// Combined text for display (synthesized if available, otherwise raw quotes)
+    /// Display text - ONLY returns AI synthesized text
+    /// No fallback to bullet list (removed as per journal improvements)
     var displayText: String {
-        if let synthesized = synthesizedText, !synthesized.isEmpty {
-            return synthesized
+        guard let synthesized = synthesizedText, !synthesized.isEmpty else {
+            return ""
         }
-        // Fall back to bullet list of quotes
-        return includedEvents
-            .sorted { $0.timestamp < $1.timestamp }
-            .map { "• \($0.userText)" }
-            .joined(separator: "\n\n")
+        return synthesized
     }
 }

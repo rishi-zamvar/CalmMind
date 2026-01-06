@@ -4,9 +4,12 @@ import SwiftUI
 struct JournalDetailView: View {
     let entry: JournalEntry
     @Bindable var viewModel: JournalViewModel
+    let userPreferences: UserPreferences
     @Environment(\.dismiss) private var dismiss
     @State private var isEditing: Bool = false
     @State private var editedText: String = ""
+    @State private var isInsightsExpanded: Bool = false
+    @State private var insightsTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -25,14 +28,8 @@ struct JournalDetailView: View {
 
                     Spacer()
 
-                    // Auto Journal button (today) or Mood badge (past entries)
-                    if viewModel.isEntryLocked(for: entry) {
-                        // Past entry: show mood badge (read-only)
-                        if let mood = entry.moodScore {
-                            MoodBadge(score: mood)
-                        }
-                    } else {
-                        // Today's entry: show Auto Journal button
+                    // Auto Journal button (only for today's entry)
+                    if !viewModel.isEntryLocked(for: entry) {
                         AutoJournalButton(
                             entry: entry,
                             onSynthesize: {
@@ -112,6 +109,11 @@ struct JournalDetailView: View {
                     .padding(.horizontal)
                 }
 
+                // AI Insights section (opt-in feature)
+                if userPreferences.aiInsightsEnabled {
+                    aiInsightsSection
+                }
+
                 Spacer()
             }
             .padding(.top)
@@ -152,7 +154,94 @@ struct JournalDetailView: View {
                 }
             }
         }
+        .onDisappear {
+            insightsTask?.cancel()
+            viewModel.cancelInsightsGeneration()
+        }
     }
+
+    // MARK: - AI Insights Section
+
+    @ViewBuilder
+    private var aiInsightsSection: some View {
+        DisclosureGroup(isExpanded: $isInsightsExpanded) {
+            insightsContent
+        } label: {
+            Label("AI Insights", systemImage: "lightbulb")
+                .font(DesignTokens.Typography.sectionHeader)
+                .foregroundStyle(DesignTokens.Colors.warmClay)
+        }
+        .tint(DesignTokens.Colors.warmClay)
+        .padding()
+        .background(DesignTokens.Colors.subtleSection)
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radii.card))
+        .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private var insightsContent: some View {
+        switch viewModel.insightsState {
+        case .generating:
+            HStack(spacing: 8) {
+                ProgressView()
+                    .tint(DesignTokens.Colors.warmClay)
+                Text("Analyzing...")
+                    .font(DesignTokens.Typography.body)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+
+        case .failed:
+            VStack(spacing: 12) {
+                Text(viewModel.insightsError ?? "Unable to generate insights")
+                    .font(DesignTokens.Typography.meta)
+                    .foregroundStyle(DesignTokens.Colors.textSecondary)
+                    .multilineTextAlignment(.center)
+
+                Button("Try Again") {
+                    startInsightsGeneration()
+                }
+                .buttonStyle(.bordered)
+                .tint(DesignTokens.Colors.warmClay)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+
+        case .loaded:
+            if let insights = entry.insights {
+                InsightsContentView(insights: insights)
+            } else {
+                generateButton
+            }
+
+        case .idle:
+            generateButton
+        }
+    }
+
+    private var generateButton: some View {
+        Button {
+            startInsightsGeneration()
+        } label: {
+            Label("Generate Insights", systemImage: "sparkles")
+                .font(DesignTokens.Typography.body)
+        }
+        .buttonStyle(.bordered)
+        .tint(DesignTokens.Colors.warmClay)
+        .disabled(viewModel.insightsState == .generating || entry.displayText.isEmpty)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    private func startInsightsGeneration() {
+        insightsTask?.cancel()
+        insightsTask = Task {
+            await viewModel.generateInsights(for: entry)
+        }
+    }
+
+    // MARK: - Formatting
 
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()

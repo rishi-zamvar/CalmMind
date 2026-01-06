@@ -12,8 +12,9 @@ final class WeatherViewModel {
     // MARK: - State
 
     enum State: Equatable {
-        case hidden          // Privacy mode, denied, or no data - card not shown
+        case hidden          // Privacy mode or no data - card not shown
         case needsPermission // Location not determined - show enable button
+        case denied          // Location denied - show enable button with Settings redirect
         case loading
         case loaded(Weather, locationString: String)
 
@@ -21,6 +22,7 @@ final class WeatherViewModel {
             switch (lhs, rhs) {
             case (.hidden, .hidden): return true
             case (.needsPermission, .needsPermission): return true
+            case (.denied, .denied): return true
             case (.loading, .loading): return true
             case (.loaded(let w1, let l1), .loaded(let w2, let l2)):
                 return w1.temperature == w2.temperature &&
@@ -90,7 +92,8 @@ final class WeatherViewModel {
             state = .hidden
             return
         case .denied:
-            state = .hidden
+            // Show enable button with Settings redirect
+            state = .denied
             return
         case .notDetermined:
             // Show enable button - don't request permission automatically

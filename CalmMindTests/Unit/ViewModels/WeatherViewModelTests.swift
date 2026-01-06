@@ -64,12 +64,13 @@ final class WeatherViewModelTests: XCTestCase {
 
     // MARK: - Hidden States
 
-    func test_loadWeather_locationDenied_showsHidden() async {
+    func test_loadWeather_locationDenied_showsDenied() async {
         mockLocationService.mockIsDenied = true
 
         await viewModel.loadWeather()
 
-        XCTAssertEqual(viewModel.state, .hidden)
+        // Denied shows .denied state (Settings redirect available)
+        XCTAssertEqual(viewModel.state, .denied)
     }
 
     func test_loadWeather_privacyMode_showsHidden() async {

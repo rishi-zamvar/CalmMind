@@ -1,7 +1,11 @@
 import SwiftUI
+import SwiftData
 
 /// Settings view for app configuration
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var services: ServiceContainer
+
     @AppStorage("morningNotificationsEnabled") private var morningNotifications = true
     @AppStorage("eveningNotificationsEnabled") private var eveningNotifications = true
     @AppStorage("privacyMode") private var privacyMode = false
@@ -10,8 +14,11 @@ struct SettingsView: View {
     @AppStorage("weatherEnabled") private var weatherEnabled = true
 
     @State private var showingDeleteConfirmation = false
-    @State private var showingAPIKeySheet = false
     @State private var showingWeatherAPIKeySheet = false
+    @State private var showingDeleteError = false
+    @State private var showingDeleteSuccess = false
+    @State private var deleteErrorMessage = ""
+    @State private var isDeleting = false
 
     var body: some View {
         Form {
@@ -90,21 +97,6 @@ struct SettingsView: View {
                 Text("Weather requires a free OpenWeatherMap API key and location access.")
                     .font(DesignTokens.Typography.meta)
                     .foregroundColor(DesignTokens.Colors.textTertiary)
-            }
-
-            // API section
-            Section {
-                Button {
-                    showingAPIKeySheet = true
-                } label: {
-                    Text("Update API Key")
-                        .font(DesignTokens.Typography.body)
-                        .foregroundColor(DesignTokens.Colors.warmClay)
-                }
-            } header: {
-                Text("OpenAI")
-                    .font(DesignTokens.Typography.meta)
-                    .foregroundColor(DesignTokens.Colors.textSecondary)
             }
 
             // About section
@@ -191,20 +183,46 @@ struct SettingsView: View {
         .alert("Delete All Data?", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                // TODO: Implement data deletion
+                deleteAllData()
             }
+            .disabled(isDeleting)
         } message: {
-            Text("This will permanently delete all your conversations, journals, todos, and settings. This action cannot be undone.")
+            Text("This will permanently delete your conversations, journals, and todos. Your settings will be preserved.")
         }
-        .sheet(isPresented: $showingAPIKeySheet) {
-            NavigationStack {
-                APIKeySetupView(isPresented: $showingAPIKeySheet)
-            }
+        .alert("Data Deleted", isPresented: $showingDeleteSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your conversations, journals, and todos have been deleted.")
+        }
+        .alert("Error Deleting Data", isPresented: $showingDeleteError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteErrorMessage)
         }
         .sheet(isPresented: $showingWeatherAPIKeySheet) {
             NavigationStack {
                 WeatherAPIKeySetupView(isPresented: $showingWeatherAPIKeySheet)
             }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func deleteAllData() {
+        // Single-flight protection
+        guard !isDeleting else { return }
+        isDeleting = true
+
+        let deleter = DataDeleter(modelContext: modelContext)
+
+        do {
+            try deleter.deleteAllData()
+            isDeleting = false
+            showingDeleteSuccess = true
+        } catch {
+            isDeleting = false
+            deleteErrorMessage = "Failed to delete data: \(error.localizedDescription)"
+            showingDeleteError = true
         }
     }
 }

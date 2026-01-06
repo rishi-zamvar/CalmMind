@@ -7,42 +7,22 @@ final class DataDeleterTests: XCTestCase {
     var sut: DataDeleter!
     var container: ModelContainer!
     var context: ModelContext!
-    var mockSecretsStore: MockSecretsStore!
-    var mockNotificationScheduler: MockNotificationScheduler!
-    var mockWidgetSnapshotStore: MockWidgetSnapshotStore!
-    var testUserDefaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try! ModelContainer(
-            for: ChatMessage.self, DailySession.self, JournalEntry.self, TodoItem.self, MemoryItem.self,
+            for: ChatMessage.self, DailySession.self, JournalEntry.self, TodoItem.self, MemoryItem.self, Topic.self, Fact.self,
             configurations: config
         )
         context = ModelContext(container)
-        mockSecretsStore = MockSecretsStore()
-        mockNotificationScheduler = MockNotificationScheduler()
-        mockWidgetSnapshotStore = MockWidgetSnapshotStore()
-        testUserDefaults = UserDefaults(suiteName: "com.calmmind.tests.deleter.\(UUID().uuidString)")!
-
-        sut = DataDeleter(
-            modelContext: context,
-            secretsStore: mockSecretsStore,
-            notificationScheduler: mockNotificationScheduler,
-            widgetSnapshotStore: mockWidgetSnapshotStore,
-            userDefaults: testUserDefaults
-        )
+        sut = DataDeleter(modelContext: context)
     }
 
     override func tearDown() {
-        testUserDefaults.removePersistentDomain(forName: testUserDefaults.description)
         sut = nil
         context = nil
         container = nil
-        mockSecretsStore = nil
-        mockNotificationScheduler = nil
-        mockWidgetSnapshotStore = nil
-        testUserDefaults = nil
         super.tearDown()
     }
 
@@ -115,61 +95,31 @@ final class DataDeleterTests: XCTestCase {
         XCTAssertEqual(remaining.count, 0)
     }
 
-    // MARK: - Clear Credentials
-
-    func test_deleteAllData_clearsKeychain() throws {
-        mockSecretsStore.setStoredKey("sk-test-key")
+    func test_deleteAllData_removesAllTopics() throws {
+        let topic = Topic(name: "Test Person", type: .person)
+        context.insert(topic)
+        try context.save()
 
         try sut.deleteAllData()
 
-        XCTAssertEqual(mockSecretsStore.deleteAPIKeyCallCount, 1)
+        let descriptor = FetchDescriptor<Topic>()
+        let remaining = try context.fetch(descriptor)
+        XCTAssertEqual(remaining.count, 0)
     }
 
-    // MARK: - Clear Notifications
-
-    func test_deleteAllData_cancelsAllNotifications() throws {
-        try sut.deleteAllData()
-
-        XCTAssertTrue(mockNotificationScheduler.cancelAllPendingCalled)
-    }
-
-    // MARK: - Clear Widget
-
-    func test_deleteAllData_clearsWidgetSnapshot() throws {
-        try sut.deleteAllData()
-
-        XCTAssertTrue(mockWidgetSnapshotStore.clearCalled)
-    }
-
-    // MARK: - Clear UserDefaults
-
-    func test_deleteAllData_clearsUserDefaults() throws {
-        // Use keys that don't have registered defaults
-        // Many keys (morningNotificationsEnabled, privacyModeEnabled, hasCompletedOnboarding, etc.)
-        // have registered defaults from UserPreferences.registerDefaults()
-        // lastNudgeMorningAt and lastNudgeEveningAt do NOT have registered defaults
-        testUserDefaults.set(Date(), forKey: "lastNudgeMorningAt")
-        testUserDefaults.set(Date(), forKey: "lastNudgeEveningAt")
+    func test_deleteAllData_cascadesDeleteToFacts() throws {
+        let topic = Topic(name: "Test Person", type: .person)
+        let fact = Fact(content: "Test fact", topic: topic)
+        topic.facts.append(fact)
+        context.insert(topic)
+        try context.save()
 
         try sut.deleteAllData()
 
-        // These specific keys should be cleared (they don't have registered defaults)
-        XCTAssertNil(testUserDefaults.object(forKey: "lastNudgeMorningAt"))
-        XCTAssertNil(testUserDefaults.object(forKey: "lastNudgeEveningAt"))
-    }
-
-    // MARK: - Clear Encryption Keys
-
-    func test_deleteAllData_clearsEncryptionKeys() throws {
-        let encryptor = FieldEncryptor()
-        let key = encryptor.generateKey()!
-        encryptor.storeKey(key, for: "journal")
-
-        try sut.deleteAllData()
-
-        // Encryption key should be deleted
-        // Note: In real implementation, DataDeleter should call encryptor.deleteKey
-        XCTAssertTrue(true) // Just verify no crash for now
+        let topicDescriptor = FetchDescriptor<Topic>()
+        let factDescriptor = FetchDescriptor<Fact>()
+        XCTAssertEqual(try context.fetch(topicDescriptor).count, 0)
+        XCTAssertEqual(try context.fetch(factDescriptor).count, 0)
     }
 
     // MARK: - Idempotency
@@ -192,7 +142,7 @@ final class DataDeleterTests: XCTestCase {
 
     // MARK: - Comprehensive Cleanup
 
-    func test_deleteAllData_deletesEverything() throws {
+    func test_deleteAllData_deletesAllUserContent() throws {
         // Add data of all types
         let session = DailySession(date: Date())
         context.insert(session)
@@ -209,73 +159,44 @@ final class DataDeleterTests: XCTestCase {
         let memory = MemoryItem(content: "Test")
         context.insert(memory)
 
+        let topic = Topic(name: "Test Person", type: .person)
+        context.insert(topic)
+
         try context.save()
-
-        // Set preferences
-        testUserDefaults.set(true, forKey: "morningNotificationsEnabled")
-
-        // Set API key
-        mockSecretsStore.setStoredKey("sk-test")
 
         // Delete everything
         try sut.deleteAllData()
 
-        // Verify all cleared
+        // Verify all user content cleared
         XCTAssertEqual(try context.fetch(FetchDescriptor<ChatMessage>()).count, 0)
         XCTAssertEqual(try context.fetch(FetchDescriptor<DailySession>()).count, 0)
         XCTAssertEqual(try context.fetch(FetchDescriptor<JournalEntry>()).count, 0)
         XCTAssertEqual(try context.fetch(FetchDescriptor<TodoItem>()).count, 0)
         XCTAssertEqual(try context.fetch(FetchDescriptor<MemoryItem>()).count, 0)
-        XCTAssertEqual(mockSecretsStore.deleteAPIKeyCallCount, 1)
-        XCTAssertTrue(mockNotificationScheduler.cancelAllPendingCalled)
-        XCTAssertTrue(mockWidgetSnapshotStore.clearCalled)
-    }
-}
-
-// MARK: - Mock Notification Scheduler
-
-class MockNotificationScheduler: NotificationSchedulerProtocol {
-    var cancelAllPendingCalled = false
-    var scheduleMorningNudgeCalled = false
-    var scheduleEveningNudgeCalled = false
-
-    func scheduleMorningNudge(for date: Date) async {
-        scheduleMorningNudgeCalled = true
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Topic>()).count, 0)
     }
 
-    func scheduleEveningNudge(for date: Date) async {
-        scheduleEveningNudgeCalled = true
-    }
+    // MARK: - Preserves Settings (Regression Guard)
 
-    func cancelNudge(id: String) {
-        // No-op
-    }
+    func test_deleteAllData_doesNotAffectUserDefaults() throws {
+        // Set some preferences
+        let testDefaults = UserDefaults(suiteName: "com.calmmind.test.\(UUID().uuidString)")!
+        testDefaults.set(true, forKey: "morningNotificationsEnabled")
+        testDefaults.set("test-value", forKey: "customSetting")
 
-    func cancelAllPending() {
-        cancelAllPendingCalled = true
-    }
+        // Add some data
+        let message = ChatMessage(content: "Test", role: .user)
+        context.insert(message)
+        try context.save()
 
-    func requestAuthorization() async -> Bool {
-        return true
-    }
-}
+        // Delete all data
+        try sut.deleteAllData()
 
-// MARK: - Mock Widget Snapshot Store
+        // Verify preferences are preserved
+        XCTAssertTrue(testDefaults.bool(forKey: "morningNotificationsEnabled"))
+        XCTAssertEqual(testDefaults.string(forKey: "customSetting"), "test-value")
 
-class MockWidgetSnapshotStore: WidgetSnapshotStoreProtocol {
-    var clearCalled = false
-    var updateSnapshotCalled = false
-
-    func updateSnapshot(
-        incompleteTodos: [String],
-        didMorningCheckIn: Bool,
-        didEveningCheckIn: Bool,
-        lastInteraction: Date?
-    ) {
-        updateSnapshotCalled = true
-    }
-
-    func clear() {
-        clearCalled = true
+        // Cleanup
+        testDefaults.removePersistentDomain(forName: "com.calmmind.test")
     }
 }

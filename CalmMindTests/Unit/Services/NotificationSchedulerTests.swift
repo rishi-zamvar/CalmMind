@@ -200,4 +200,10 @@ final class MockUNUserNotificationCenter: NotificationCenterProtocol {
     func pendingNotificationRequests() async -> [UNNotificationRequest] {
         return pendingRequests
     }
+
+    func notificationSettings() async -> UNNotificationSettings {
+        // Create mock settings using a test-specific approach
+        // UNNotificationSettings cannot be directly instantiated, so we use the current center
+        return await UNUserNotificationCenter.current().notificationSettings()
+    }
 }

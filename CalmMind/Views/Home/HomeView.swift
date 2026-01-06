@@ -90,7 +90,8 @@ struct HomeView: View {
                     viewModel: JournalViewModel(
                         journalRepository: journalRepository,
                         journalSynthesizer: journalSynthesizer
-                    )
+                    ),
+                    userPreferences: services.userPreferences
                 )
             }
         }

@@ -18,9 +18,10 @@ struct AutoJournalButton: View {
                     ProgressView()
                         .scaleEffect(0.8)
                     Text("Writing...")
-                } else if showSuccess, let mood = entry.moodScore {
-                    Text(moodEmoji(for: mood))
-                    Text("Mood: \(mood)/10")
+                } else if showSuccess {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(DesignTokens.Colors.sage)
+                    Text("Saved")
                 } else {
                     Image(systemName: "sparkles")
                     Text(entry.isSynthesized ? "Rewrite" : "Auto Journal")
@@ -45,16 +46,4 @@ struct AutoJournalButton: View {
         }
     }
 
-    private func moodEmoji(for score: Int) -> String {
-        switch score {
-        case 1...2: return "😢"
-        case 3...4: return "😕"
-        case 5...6: return "😐"
-        case 7...8: return "🙂"
-        case 9...10: return "😊"
-        default: return "😐"
-        }
-    }
 }
-
-// Note: MoodBadge is defined in JournalListView.swift

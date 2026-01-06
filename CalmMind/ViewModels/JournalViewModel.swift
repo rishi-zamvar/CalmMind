@@ -1,11 +1,22 @@
 import Foundation
 import SwiftData
 import Observation
+import os
 
 /// ViewModel for the journal interface
 @MainActor
 @Observable
 final class JournalViewModel {
+
+    // MARK: - Insights State
+
+    /// State of insights generation
+    enum InsightsState: Equatable {
+        case idle
+        case generating
+        case loaded
+        case failed
+    }
 
     // MARK: - Published State
 
@@ -20,6 +31,15 @@ final class JournalViewModel {
 
     /// Whether to show error
     var showError: Bool = false
+
+    /// Current insights generation state
+    private(set) var insightsState: InsightsState = .idle
+
+    /// Insights error message (observable, not silent)
+    private(set) var insightsError: String?
+
+    /// Whether insights generation is in progress
+    private(set) var isGeneratingInsights: Bool = false
 
     // MARK: - Computed Properties
 
@@ -60,12 +80,22 @@ final class JournalViewModel {
 
     private let journalRepository: JournalRepository
     private let journalSynthesizer: JournalSynthesizer?
+    private let insightsGenerator: InsightsGeneratorProtocol?
+    private let logger = Logger(subsystem: "com.calmmind", category: "JournalViewModel")
+
+    /// Task for insights generation (for cancellation)
+    private var insightsTask: Task<Void, Never>?
 
     // MARK: - Initialization
 
-    init(journalRepository: JournalRepository, journalSynthesizer: JournalSynthesizer? = nil) {
+    init(
+        journalRepository: JournalRepository,
+        journalSynthesizer: JournalSynthesizer? = nil,
+        insightsGenerator: InsightsGeneratorProtocol? = nil
+    ) {
         self.journalRepository = journalRepository
         self.journalSynthesizer = journalSynthesizer
+        self.insightsGenerator = insightsGenerator
     }
 
     // MARK: - Loading
@@ -170,5 +200,70 @@ final class JournalViewModel {
         let today = calendar.startOfDay(for: Date())
         let entryDay = calendar.startOfDay(for: entry.entryDate)
         return entryDay < today
+    }
+
+    // MARK: - AI Insights Generation
+
+    /// Generate AI insights for a journal entry
+    /// - Observable errors (not silent catch)
+    /// - Double-tap protection
+    /// - Cancellable and idempotent
+    func generateInsights(for entry: JournalEntry) async {
+        // Double-tap protection
+        guard !isGeneratingInsights else {
+            logger.debug("Insights generation already in progress, ignoring")
+            return
+        }
+
+        guard let generator = insightsGenerator else {
+            logger.warning("Insights generator not available")
+            insightsError = "Insights not available"
+            insightsState = .failed
+            return
+        }
+
+        // Get text to analyze (prefer synthesized, fall back to displayText)
+        let textToAnalyze = entry.displayText
+
+        // Empty input check
+        guard !textToAnalyze.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            logger.debug("Empty entry text, skipping insights")
+            return
+        }
+
+        isGeneratingInsights = true
+        insightsState = .generating
+        insightsError = nil
+
+        do {
+            let insights = try await generator.generate(for: textToAnalyze)
+
+            // Store insights on entry
+            entry.insightsData = try JSONEncoder().encode(insights)
+
+            insightsState = .loaded
+            insightsError = nil
+
+            // Log success (redacted - no entry text)
+            logger.info("Insights generated successfully")
+
+        } catch {
+            // NOT silent - surface error to UI
+            insightsState = .failed
+            insightsError = "Unable to generate insights. Try again later."
+
+            // Log error (redacted - no entry text or prompt)
+            logger.error("Insights generation failed: \(error.localizedDescription)")
+        }
+
+        isGeneratingInsights = false
+    }
+
+    /// Cancel in-progress insights generation
+    func cancelInsightsGeneration() {
+        insightsTask?.cancel()
+        insightsTask = nil
+        isGeneratingInsights = false
+        insightsState = .idle
     }
 }

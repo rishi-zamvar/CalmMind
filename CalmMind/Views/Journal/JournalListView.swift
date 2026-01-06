@@ -4,6 +4,7 @@ import SwiftData
 /// Main journal list view
 struct JournalListView: View {
     @Bindable var viewModel: JournalViewModel
+    let userPreferences: UserPreferences
     @State private var selectedEntry: JournalEntry?
     @State private var showingNewEntry: Bool = false
 
@@ -18,7 +19,7 @@ struct JournalListView: View {
             }
             .sheet(item: $selectedEntry) { entry in
                 NavigationStack {
-                    JournalDetailView(entry: entry, viewModel: viewModel)
+                    JournalDetailView(entry: entry, viewModel: viewModel, userPreferences: userPreferences)
                 }
             }
             .sheet(isPresented: $showingNewEntry) {
@@ -130,17 +131,9 @@ struct JournalEntryRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(formatDate(entry.entryDate))
-                    .font(DesignTokens.Typography.sectionHeader)
-                    .foregroundColor(DesignTokens.Colors.textPrimary)
-
-                Spacer()
-
-                if let mood = entry.moodScore {
-                    MoodBadge(score: mood)
-                }
-            }
+            Text(formatDate(entry.entryDate))
+                .font(DesignTokens.Typography.sectionHeader)
+                .foregroundColor(DesignTokens.Colors.textPrimary)
 
             Text(previewText)
                 .font(DesignTokens.Typography.body)
@@ -154,31 +147,6 @@ struct JournalEntryRow: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter.string(from: date)
-    }
-}
-
-/// Badge showing mood score (warm color palette)
-struct MoodBadge: View {
-    let score: Int
-
-    private var moodColor: Color {
-        switch score {
-        case 1...3: return DesignTokens.Colors.destructive
-        case 4...6: return DesignTokens.Colors.warmClay
-        case 7...8: return DesignTokens.Colors.duskBlue
-        case 9...10: return DesignTokens.Colors.sage
-        default: return DesignTokens.Colors.textTertiary
-        }
-    }
-
-    var body: some View {
-        Text("\(score)")
-            .font(DesignTokens.Typography.meta)
-            .fontWeight(.bold)
-            .foregroundColor(.white)
-            .frame(width: 24, height: 24)
-            .background(moodColor)
-            .clipShape(Circle())
     }
 }
 

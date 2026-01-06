@@ -17,6 +17,7 @@ protocol NotificationCenterProtocol {
     func removeAllPendingNotificationRequests()
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
     func pendingNotificationRequests() async -> [UNNotificationRequest]
+    func notificationSettings() async -> UNNotificationSettings
 }
 
 extension UNUserNotificationCenter: NotificationCenterProtocol {}

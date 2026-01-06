@@ -4,22 +4,38 @@ import SwiftUI
 /// Single line format: "San Francisco · 58°F ☀️"
 /// If state is .hidden, returns EmptyView
 /// Permission request happens on user tap when notDetermined
+/// Settings alert shown when permission was denied
 struct WeatherCard: View {
     @Bindable var viewModel: WeatherViewModel
 
+    @State private var showSettingsAlert = false
+
     var body: some View {
-        switch viewModel.state {
-        case .hidden:
-            EmptyView()
+        Group {
+            switch viewModel.state {
+            case .hidden:
+                EmptyView()
 
-        case .needsPermission:
-            permissionRequestView
+            case .needsPermission:
+                permissionRequestView
 
-        case .loading:
-            loadingView
+            case .denied:
+                permissionDeniedView
 
-        case .loaded(let weather, let locationString):
-            weatherContent(weather: weather, locationString: locationString)
+            case .loading:
+                loadingView
+
+            case .loaded(let weather, let locationString):
+                weatherContent(weather: weather, locationString: locationString)
+            }
+        }
+        .alert("Location Access Required", isPresented: $showSettingsAlert) {
+            Button("Open Settings") {
+                SettingsOpener.openAppSettings()
+            }
+            Button("Not Now", role: .cancel) { }
+        } message: {
+            Text("Location access was denied. Enable it in Settings to see local weather.")
         }
     }
 
@@ -29,6 +45,10 @@ struct WeatherCard: View {
         Button {
             Task {
                 await viewModel.requestLocationPermission()
+                // After permission request, check if denied
+                if case .denied = viewModel.state {
+                    showSettingsAlert = true
+                }
             }
         } label: {
             HStack(spacing: DesignTokens.Spacing.cardPad / 2) {
@@ -46,6 +66,33 @@ struct WeatherCard: View {
         .accessibilityHint("Tapping will request location permission")
         .onAppear {
             // Re-check permission state in case it was stale on initial load
+            Task {
+                await viewModel.loadWeather()
+            }
+        }
+    }
+
+    // MARK: - Permission Denied (redirect to Settings)
+
+    private var permissionDeniedView: some View {
+        Button {
+            showSettingsAlert = true
+        } label: {
+            HStack(spacing: DesignTokens.Spacing.cardPad / 2) {
+                Image(systemName: "location.slash.fill")
+                    .foregroundStyle(.orange)
+                Text("Tap to enable weather")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, DesignTokens.Spacing.cardPad / 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Enable location for weather")
+        .accessibilityHint("Tapping will open Settings to enable location permission")
+        .onAppear {
+            // Re-check permission state in case it changed
             Task {
                 await viewModel.loadWeather()
             }

@@ -30,6 +30,9 @@ final class UserPreferences {
         static let autoJournalingEnabled = "autoJournalingEnabled"
         static let installedVersion = "installedBuildVersion"
         static let weatherEnabled = "weatherEnabled"
+        static let locationPermissionInteracted = "locationPermissionInteracted"
+        static let notificationPermissionInteracted = "notificationPermissionInteracted"
+        static let aiInsightsEnabled = "aiInsightsEnabled"
     }
 
     // MARK: - Properties
@@ -52,7 +55,9 @@ final class UserPreferences {
             Keys.hasCompletedOnboarding: false,
             Keys.hasCompletedOnboardingV2: false,
             Keys.autoCreateTodos: true,
-            Keys.weatherEnabled: true
+            Keys.weatherEnabled: true,
+            Keys.locationPermissionInteracted: false,
+            Keys.notificationPermissionInteracted: false
         ])
     }
 
@@ -156,6 +161,32 @@ final class UserPreferences {
         set { defaults.set(newValue, forKey: Keys.weatherEnabled) }
     }
 
+    /// Whether AI Insights feature is enabled for journal entries
+    /// Defaults to FALSE (opt-in, not opt-out) - requires explicit consent
+    var aiInsightsEnabled: Bool {
+        get {
+            // Default to false - requires explicit opt-in
+            defaults.bool(forKey: Keys.aiInsightsEnabled)
+        }
+        set { defaults.set(newValue, forKey: Keys.aiInsightsEnabled) }
+    }
+
+    // MARK: - Permission Interaction Tracking
+
+    /// Whether user has interacted with location permission (grant or deny)
+    /// Used to enable "Get Started" button in onboarding
+    var locationPermissionInteracted: Bool {
+        get { defaults.bool(forKey: Keys.locationPermissionInteracted) }
+        set { defaults.set(newValue, forKey: Keys.locationPermissionInteracted) }
+    }
+
+    /// Whether user has interacted with notification permission (grant or deny)
+    /// Used to enable "Get Started" button in onboarding
+    var notificationPermissionInteracted: Bool {
+        get { defaults.bool(forKey: Keys.notificationPermissionInteracted) }
+        set { defaults.set(newValue, forKey: Keys.notificationPermissionInteracted) }
+    }
+
     // MARK: - Version Tracking
 
     /// Stamp the installed version on first launch (for migrations)
@@ -213,7 +244,10 @@ final class UserPreferences {
             Keys.userName,
             Keys.autoCreateTodos,
             Keys.autoJournalingEnabled,
-            Keys.weatherEnabled
+            Keys.weatherEnabled,
+            Keys.locationPermissionInteracted,
+            Keys.notificationPermissionInteracted,
+            Keys.aiInsightsEnabled
             // Note: deviceSalt and installedVersion are intentionally NOT reset
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }

@@ -3,6 +3,55 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var services: ServiceContainer
+
+    /// Loading gate - ensures UserDefaults hydrated before showing content
+    @State private var isReady = false
+
+    /// Tracks onboarding completion to trigger view update
+    /// Needed because UserPreferences doesn't trigger SwiftUI observation
+    @State private var hasCompletedOnboarding = false
+
+    var body: some View {
+        Group {
+            if !isReady {
+                // Loading gate: stable view until preferences hydrated
+                ProgressView()
+                    .tint(DesignTokens.Colors.warmClay)
+                    .onAppear { checkReady() }
+            } else if !hasCompletedOnboarding {
+                // Onboarding flow
+                OnboardingContainerView(
+                    locationService: services.locationService,
+                    userPreferences: services.userPreferences,
+                    onComplete: {
+                        // Trigger view update to show MainTabView
+                        hasCompletedOnboarding = true
+                    }
+                )
+            } else {
+                // Main app
+                MainTabView()
+            }
+        }
+    }
+
+    private func checkReady() {
+        // Ensure UserDefaults is fully synchronized
+        // In practice this is immediate, but gate ensures no flicker
+        DispatchQueue.main.async {
+            // Read persisted state on startup
+            hasCompletedOnboarding = services.userPreferences.hasCompletedOnboardingV2
+            isReady = true
+        }
+    }
+}
+
+// MARK: - Main Tab View
+
+/// The main tab interface shown after onboarding is complete
+struct MainTabView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedTab: Tab = .home
     @State private var chatAutoFocus = false
     @State private var todoAutoFocusAdd = false
@@ -230,7 +279,7 @@ struct JournalTabView: View {
     var body: some View {
         Group {
             if let viewModel = viewModel {
-                JournalListView(viewModel: viewModel)
+                JournalListView(viewModel: viewModel, userPreferences: services.userPreferences)
             } else {
                 ProgressView("Loading...")
             }
@@ -263,12 +312,11 @@ struct JournalTabView: View {
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: [
-            ChatMessage.self,
-            DailySession.self,
-            JournalEntry.self,
-            TodoItem.self,
-            MemoryItem.self
-        ], inMemory: true)
+    let container = try! ModelContainer(
+        for: ChatMessage.self, DailySession.self, JournalEntry.self, TodoItem.self, MemoryItem.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    return ContentView()
+        .modelContainer(container)
+        .environmentObject(ServiceContainer(modelContainer: container))
 }

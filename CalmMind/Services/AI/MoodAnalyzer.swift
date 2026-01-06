@@ -29,11 +29,14 @@ struct MoodAnalyzer {
     /// Baseline mood score (neutral)
     private static let baseline = 5
 
+    /// Minimum mood score floor (avoid depressing scores)
+    static let moodFloor = 4
+
     // MARK: - Analysis
 
-    /// Analyze text and return mood score (1-10)
+    /// Analyze text and return mood score (4-10)
     /// - Parameter text: The text to analyze
-    /// - Returns: Mood score 1-10, or nil if text is empty/whitespace
+    /// - Returns: Mood score 4-10 (floored at 4), or nil if text is empty/whitespace
     static func analyzeMood(from text: String) -> Int? {
         let normalized = text.lowercased()
 
@@ -54,7 +57,7 @@ struct MoodAnalyzer {
             score -= 1
         }
 
-        // Clamp to 1-10 range
-        return max(1, min(10, score))
+        // Clamp to moodFloor-10 range (floor at 4 to avoid depressing scores)
+        return max(moodFloor, min(10, score))
     }
 }
