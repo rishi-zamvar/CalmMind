@@ -84,12 +84,11 @@ final class DataExporter {
     // MARK: - Entity to Dictionary Conversion
 
     private func sessionToDict(_ session: DailySession) -> [String: Any] {
-        var dict: [String: Any] = [
+        return [
             "id": session.id.uuidString,
             "date": ISO8601DateFormatter().string(from: session.date),
             "isJournalGenerated": session.isJournalGenerated
         ]
-        return dict
     }
 
     private func messageToDict(_ message: ChatMessage) -> [String: Any] {
