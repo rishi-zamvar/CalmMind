@@ -2,8 +2,12 @@ import Foundation
 
 // MARK: - Tool Call
 
-/// Represents a tool call from the LLM
-struct ToolCall: Sendable {
+/// Represents a tool call from the LLM.
+///
+/// Conforms to `Sendable` via the `@unchecked` extension below because `arguments`
+/// holds a `[String: Any]` that cannot be proven Sendable at compile time; it is
+/// treated as immutable after construction.
+struct ToolCall {
     let id: String
     let name: String
     let arguments: [String: Any]

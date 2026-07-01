@@ -1,7 +1,9 @@
 import Foundation
 
 /// Service for generating text embeddings via OpenAI API
-final class EmbeddingService: EmbeddingServiceProtocol, Sendable {
+// `@unchecked` because stored dependencies (SecretsStore, UserPreferences) are not
+// statically Sendable; they are only accessed for reads, so the class is thread-safe.
+final class EmbeddingService: EmbeddingServiceProtocol, @unchecked Sendable {
 
     // MARK: - Constants
 

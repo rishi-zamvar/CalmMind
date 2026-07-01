@@ -1,7 +1,9 @@
 import Foundation
 
 /// Result of tool validation
-struct ToolValidationResult: Sendable {
+// `@unchecked` because `sanitizedArguments` holds a `[String: Any]?` that cannot be
+// proven Sendable at compile time; it is treated as immutable after construction.
+struct ToolValidationResult: @unchecked Sendable {
     /// Whether the tool call is valid
     let isValid: Bool
 

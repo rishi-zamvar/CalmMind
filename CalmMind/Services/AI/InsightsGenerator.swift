@@ -3,7 +3,11 @@ import os
 
 /// Generates AI insights with config-driven routing and allowlist enforcement
 /// Errors propagate (never silently swallowed) and provenance is tracked
-final class InsightsGenerator {
+///
+/// `@unchecked Sendable` is declared here (in the same file as the type) so the
+/// `InsightsGeneratorProtocol: Sendable` conformance is not applied retroactively from
+/// another file; all stored dependencies are immutable and thread-safe to read.
+final class InsightsGenerator: @unchecked Sendable {
 
     private let openAIService: OpenAIServiceProtocol
     private let config: InsightsConfig
