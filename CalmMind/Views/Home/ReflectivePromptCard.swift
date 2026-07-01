@@ -129,20 +129,17 @@ struct ReflectivePromptCard: View {
         }
 
         // Race between timeout and generation
-        let result: String?
-        do {
-            result = try await withTaskGroup(of: String?.self) { group in
-                group.addTask { try? await timeoutTask.value }
-                group.addTask { await generateTask.value }
+        let result: String? = await withTaskGroup(of: String?.self) { group in
+            group.addTask { try? await timeoutTask.value }
+            group.addTask { await generateTask.value }
 
-                for await value in group {
-                    if value != nil {
-                        group.cancelAll()
-                        return value
-                    }
+            for await value in group {
+                if value != nil {
+                    group.cancelAll()
+                    return value
                 }
-                return nil
             }
+            return nil
         }
 
         if let prompt = result, !prompt.isEmpty {

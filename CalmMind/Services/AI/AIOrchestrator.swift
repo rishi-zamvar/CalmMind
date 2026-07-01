@@ -152,7 +152,7 @@ final class AIOrchestrator: AIOrchestratorProtocol {
 
         // Get today's journal summary (if any)
         let todaysJournal: String?
-        if let entry = try journalRepository.fetchEntry(for: clock.now) {
+        if let entry = journalRepository.fetchEntry(for: clock.now) {
             // Use summary if available, otherwise truncate full text
             todaysJournal = entry.summary ?? String(entry.fullText.prefix(200))
         } else {

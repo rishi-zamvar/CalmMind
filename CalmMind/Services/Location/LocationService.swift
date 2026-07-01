@@ -57,7 +57,10 @@ enum LocationError: Error, Equatable {
 ///
 /// INVARIANT: Never prompts for permission on init or background.
 /// Permission request ONLY via explicit user action (requestPermissionIfNeeded).
-final class LocationService: NSObject, LocationServiceProtocol, CLLocationManagerDelegate {
+// `@unchecked` because CLLocationManager delegate callbacks and the mutable
+// `locationContinuation` are coordinated on the main actor / delegate queue rather than
+// enforced by the compiler; `LocationServiceProtocol` requires Sendable conformance.
+final class LocationService: NSObject, LocationServiceProtocol, CLLocationManagerDelegate, @unchecked Sendable {
 
     // MARK: - Cache Keys
 

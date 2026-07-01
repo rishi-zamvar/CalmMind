@@ -1,7 +1,9 @@
 import Foundation
 
 /// Result of tool validation
-struct ToolValidationResult: Sendable {
+// `@unchecked` because `sanitizedArguments` holds a `[String: Any]?` that cannot be
+// proven Sendable at compile time; it is treated as immutable after construction.
+struct ToolValidationResult: @unchecked Sendable {
     /// Whether the tool call is valid
     let isValid: Bool
 
@@ -112,8 +114,14 @@ final class ToolValidator: Sendable {
         return sanitized
     }
 
+    /// Lightweight defensive scrub of a tool-argument string.
+    ///
+    /// This strips the literal `<script` and `</script>` substrings and trims
+    /// surrounding whitespace. It is intentionally minimal — tool arguments are
+    /// persisted as plain text (journal/todo content), never rendered as HTML —
+    /// so this is a belt-and-suspenders guard, NOT comprehensive HTML/markup
+    /// sanitization. Do not rely on it to make arbitrary input safe for a web view.
     private func sanitizeString(_ input: String) -> String {
-        // Remove script tags and other potentially dangerous content
         var result = input
         result = result.replacingOccurrences(of: "<script", with: "", options: .caseInsensitive)
         result = result.replacingOccurrences(of: "</script>", with: "", options: .caseInsensitive)

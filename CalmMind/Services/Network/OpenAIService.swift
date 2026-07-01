@@ -1,7 +1,9 @@
 import Foundation
 
 /// Service for communicating with OpenAI API
-final class OpenAIService: OpenAIServiceProtocol, Sendable {
+// `@unchecked` because the stored SecretsStore dependency is not statically Sendable;
+// it is only accessed for reads, so the class remains thread-safe.
+final class OpenAIService: OpenAIServiceProtocol, @unchecked Sendable {
 
     // MARK: - Constants
 

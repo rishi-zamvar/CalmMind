@@ -395,3 +395,37 @@ final class OpenAIServiceTests: XCTestCase {
         mockURLSession.mockStatusCode = 200
     }
 }
+
+// MARK: - AnyCodable Equality
+
+/// Regression coverage for `AnyCodable`'s `Equatable` conformance, including the
+/// two-`NSNull` case that previously fell through to `default` and compared unequal.
+final class AnyCodableEqualityTests: XCTestCase {
+
+    func test_bothNSNull_areEqual() {
+        XCTAssertEqual(AnyCodable(NSNull()), AnyCodable(NSNull()))
+    }
+
+    func test_nsNull_vsValue_areNotEqual() {
+        XCTAssertNotEqual(AnyCodable(NSNull()), AnyCodable("value"))
+        XCTAssertNotEqual(AnyCodable("value"), AnyCodable(NSNull()))
+    }
+
+    func test_matchingScalars_areEqual() {
+        XCTAssertEqual(AnyCodable("hi"), AnyCodable("hi"))
+        XCTAssertEqual(AnyCodable(42), AnyCodable(42))
+        XCTAssertEqual(AnyCodable(3.5), AnyCodable(3.5))
+        XCTAssertEqual(AnyCodable(true), AnyCodable(true))
+    }
+
+    func test_differingScalars_areNotEqual() {
+        XCTAssertNotEqual(AnyCodable("hi"), AnyCodable("bye"))
+        XCTAssertNotEqual(AnyCodable(1), AnyCodable(2))
+        XCTAssertNotEqual(AnyCodable(true), AnyCodable(false))
+    }
+
+    func test_mismatchedTypes_areNotEqual() {
+        XCTAssertNotEqual(AnyCodable(1), AnyCodable("1"))
+        XCTAssertNotEqual(AnyCodable(true), AnyCodable(1))
+    }
+}

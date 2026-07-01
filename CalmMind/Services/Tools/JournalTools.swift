@@ -150,7 +150,7 @@ final class JournalTools {
         do {
             // Get or create today's entry
             let entry: JournalEntry
-            if let existing = try journalRepository.fetchEntry(for: today) {
+            if let existing = journalRepository.fetchEntry(for: today) {
                 entry = existing
             } else {
                 entry = try journalRepository.createEntry(fullText: "", for: today)
@@ -209,7 +209,7 @@ final class JournalTools {
         }
 
         // Check if entry already exists for this date
-        if let existing = try journalRepository.fetchEntry(for: session.date) {
+        if let existing = journalRepository.fetchEntry(for: session.date) {
             return .success(id: existing.id.uuidString, message: "Entry already exists for this date")
         }
 
@@ -242,7 +242,7 @@ final class JournalTools {
 
     /// Get journal entry for a specific date (read-only access to past dates)
     func getEntry(for date: Date) throws -> JournalSummary? {
-        guard let entry = try journalRepository.fetchEntry(for: date) else {
+        guard let entry = journalRepository.fetchEntry(for: date) else {
             return nil
         }
 

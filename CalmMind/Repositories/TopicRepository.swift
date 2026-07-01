@@ -54,7 +54,7 @@ final class TopicRepository {
     /// Fetch all topics of a specific type, ordered by last mentioned
     func fetchByType(_ type: TopicType) throws -> [Topic] {
         let typeRaw = type.rawValue
-        var descriptor = FetchDescriptor<Topic>(
+        let descriptor = FetchDescriptor<Topic>(
             predicate: #Predicate { $0.topicTypeRaw == typeRaw },
             sortBy: [SortDescriptor(\Topic.lastMentionedAt, order: .reverse)]
         )

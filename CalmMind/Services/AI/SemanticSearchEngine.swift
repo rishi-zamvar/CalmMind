@@ -1,8 +1,11 @@
 import Foundation
 import SwiftData
 
-/// Result of semantic search with scoring breakdown
-struct TopicSearchResult: Sendable {
+/// Result of semantic search with scoring breakdown.
+///
+/// `@unchecked` because `topic` and `matchedFacts` are SwiftData model types that are
+/// not statically Sendable; results are consumed synchronously on the caller's context.
+struct TopicSearchResult: @unchecked Sendable {
     let topic: Topic
     let exactMatchScore: Float   // 0.0 or 1.0
     let semanticScore: Float     // 0.0 - 1.0

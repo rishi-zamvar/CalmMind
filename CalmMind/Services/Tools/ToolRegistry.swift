@@ -1,7 +1,9 @@
 import Foundation
 
 /// Definition of a tool that can be called by the AI
-struct ToolDefinition: Sendable {
+// `@unchecked` because `parameters` holds a JSON-schema `[String: Any]` that cannot be
+// proven Sendable at compile time; it is treated as immutable after construction.
+struct ToolDefinition: @unchecked Sendable {
     /// Unique name of the tool
     let name: String
 

@@ -243,7 +243,7 @@ struct AnyCodable: Codable, Equatable {
         case let (l as Int, r as Int): return l == r
         case let (l as Double, r as Double): return l == r
         case let (l as Bool, r as Bool): return l == r
-        case is NSNull, is NSNull: return true
+        case (is NSNull, is NSNull): return true
         default: return false
         }
     }
